@@ -1,0 +1,96 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>zu</groupId>
+		<artifactId>zu-project</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+
+	<artifactId>zu-finagle</artifactId>
+	<packaging>jar</packaging>
+	<name>zu-finagle</name>
+	<description>zu finagle library</description>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.5</version>
+				<configuration>
+					<forkMode>never</forkMode>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<!--plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin-->
+		</plugins>
+	</build>
+
+	<dependencies>
+		<dependency>
+			<groupId>zu</groupId>
+			<artifactId>zu-core</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>com.twitter.common</groupId>
+			<artifactId>zookeeper</artifactId>
+			<version>0.0.25</version>
+			<exclusions>
+			  <exclusion>
+			    <groupId>javax.jms</groupId>
+			    <artifactId>jms</artifactId>
+			  </exclusion>
+			  <exclusion>
+			    <groupId>com.sun.jmx</groupId>
+			    <artifactId>jmxri</artifactId>
+			  </exclusion>
+			  <exclusion>
+			    <groupId>com.sun.jdmk</groupId>
+			    <artifactId>jmxtools</artifactId>
+			  </exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>com.twitter</groupId>
+			<artifactId>finagle-core</artifactId>
+			<version>5.3.9</version>
+		</dependency>
+		<dependency>
+			<groupId>com.twitter</groupId>
+			<artifactId>finagle-thrift</artifactId>
+			<version>5.3.9</version>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.5</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+</project>
