@@ -32,6 +32,7 @@ public class ZuCluster<S extends ZuService> implements HostChangeMonitor<Service
   private final ServerSet serverSet;
   private final List<ZuClusterEventListener<S>> lsnrs;
   private final ZuServiceFactory<S> svcFactory;
+  private final PartitionInfoReader partitionReader;
   private volatile boolean monitored = false;
   
   private static class NodeClusterView<S extends ZuService>{
@@ -41,24 +42,26 @@ public class ZuCluster<S extends ZuService> implements HostChangeMonitor<Service
   
   private AtomicReference<NodeClusterView<S>> clusterView = new AtomicReference<NodeClusterView<S>>(new NodeClusterView<S>());
 
-  public ZuCluster(String host, int port, ZuServiceFactory<S> svcFactory, String clusterName) throws MonitorException {
-    this(new InetSocketAddress(host,port), svcFactory, clusterName, DEFAULT_TIMEOUT);
+  public ZuCluster(String host, int port, PartitionInfoReader partitionReader, ZuServiceFactory<S> svcFactory, String clusterName) throws MonitorException {
+    this(new InetSocketAddress(host,port), partitionReader, svcFactory, clusterName, DEFAULT_TIMEOUT);
   }
   
-  public ZuCluster(String host, int port, ZuServiceFactory<S> svcFactory, String clusterName,
+  public ZuCluster(String host, int port, PartitionInfoReader partitionReader, ZuServiceFactory<S> svcFactory, String clusterName,
       int timeout) throws MonitorException {
-    this(new InetSocketAddress(host,port), svcFactory, clusterName, timeout);
+    this(new InetSocketAddress(host,port), partitionReader, svcFactory, clusterName, timeout);
   }
   
-  public ZuCluster(InetSocketAddress zookeeperAddr, ZuServiceFactory<S> svcFactory, String clusterName) throws MonitorException{
-    this(zookeeperAddr, svcFactory, clusterName, DEFAULT_TIMEOUT);
+  public ZuCluster(InetSocketAddress zookeeperAddr, PartitionInfoReader partitionReader, ZuServiceFactory<S> svcFactory, String clusterName) throws MonitorException{
+    this(zookeeperAddr, partitionReader, svcFactory, clusterName, DEFAULT_TIMEOUT);
   }
   
-  public ZuCluster(InetSocketAddress zookeeperAddr, ZuServiceFactory<S> svcFactory, String clusterName,
+  public ZuCluster(InetSocketAddress zookeeperAddr, PartitionInfoReader partitionReader, ZuServiceFactory<S> svcFactory, String clusterName,
       int timeout) throws MonitorException{
     assert svcFactory != null;
     assert zookeeperAddr != null;
     assert clusterName != null;
+    assert partitionReader != null;
+    this.partitionReader = partitionReader;
     this.svcFactory = svcFactory;
     lsnrs = Collections.synchronizedList(new LinkedList<ZuClusterEventListener<S>>());
     ZooKeeperClient zclient = new ZooKeeperClient(Amount.of(timeout,
@@ -91,13 +94,13 @@ public class ZuCluster<S extends ZuService> implements HostChangeMonitor<Service
       Endpoint ep = si.getServiceEndpoint();
 
       S svc = oldView.nodesMap.get(ep);
+      InetSocketAddress sa = new InetSocketAddress(ep.getHost(), ep.getPort());
       if (svc == null){
         // discovered a new node
-        InetSocketAddress sa = new InetSocketAddress(ep.getHost(), ep.getPort());
         svc = svcFactory.getService(sa);
       }
       newView.nodesMap.put(ep, svc);
-      List<Integer> parts = svc.getPartitions();
+      List<Integer> parts = partitionReader.getPartitionFor(sa);
       for (Integer part : parts){
         ArrayList<S> nodeList = newView.partMap.get(part);
         if (nodeList == null){

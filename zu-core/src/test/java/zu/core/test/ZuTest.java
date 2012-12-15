@@ -54,21 +54,7 @@ public class ZuTest {
 
     server = new ZooKeeperServer(dir, dir, tickTime);
     standaloneServerFactory = new NIOServerCnxn.Factory(new InetSocketAddress(zkport), numConnections);
-    standaloneServerFactory.startup(server);
-    
-  }
-  
-  static void validate(Map<Integer,ArrayList<MockZuService>> view){
-    for (Entry<Integer,ArrayList<MockZuService>> entry : view.entrySet()){
-      Integer key = entry.getKey();
-      ArrayList<MockZuService> list = entry.getValue();
-      HashSet<Integer> parts = new HashSet<Integer>();
-      for (MockZuService svc : list){
-        List<Integer> partitionList = svc.getPartitions();
-        parts.addAll(partitionList);
-      }
-      TestCase.assertTrue(parts.contains(key));
-    }
+    standaloneServerFactory.startup(server); 
   }
   
   static void validate(Map<Integer,Set<Integer>> expected, Map<Integer,ArrayList<MockZuService>> view){
@@ -77,7 +63,7 @@ public class ZuTest {
       ArrayList<MockZuService> list = entry.getValue();
       HashSet<Integer> parts = new HashSet<Integer>();
       for (MockZuService svc : list){
-        List<Integer> partitionList = svc.getPartitions();
+        List<Integer> partitionList = MockZuService.PartitionReader.getPartitionFor(svc.getAddress());
         parts.addAll(partitionList);
       }
       TestCase.assertTrue(parts.contains(key));
@@ -90,7 +76,7 @@ public class ZuTest {
   
   @Test
   public void testBasic() throws Exception{
-    ZuCluster<MockZuService> mockCluster = new ZuCluster<MockZuService>(new InetSocketAddress(zkport), MockZuService.Factory, "/testcluster1");
+    ZuCluster<MockZuService> mockCluster = new ZuCluster<MockZuService>(new InetSocketAddress(zkport), MockZuService.PartitionReader, MockZuService.Factory, "/testcluster1");
     
     MockZuService s1 = new MockZuService(new InetSocketAddress(1));
     

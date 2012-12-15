@@ -1,39 +1,30 @@
 package zu.finagle;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.TimeUnit;
 
 import zu.core.cluster.ZuServiceFactory;
 
 import com.twitter.finagle.Service;
-import com.twitter.finagle.builder.ClientBuilder;
-import com.twitter.finagle.thrift.ThriftClientFramedCodec;
-import com.twitter.finagle.thrift.ThriftClientRequest;
-import com.twitter.util.Duration;
 
-public abstract class ZuFinagleServiceFactory implements ZuServiceFactory<ZuFinagleService> {
+public abstract class ZuFinagleServiceFactory<Req,Res> implements ZuServiceFactory<ZuFinagleService<Req,Res>> {
 
-  private final int numThreads;
-  private final long timeout;
+  protected final int numThreads;
+  protected final long timeout;
   
   public ZuFinagleServiceFactory(int numThreads, long timeout){
     this.numThreads = numThreads;
     this.timeout = timeout;
   }
   
+  protected abstract Service<Req,Res> buildFinagleService(InetSocketAddress addr);
+  
   @Override
-  public ZuFinagleService getService(InetSocketAddress addr) {
-    Service<ThriftClientRequest, byte[]> client =
-        ClientBuilder.safeBuild(ClientBuilder.get()
-                .hosts(addr)
-            .codec(ThriftClientFramedCodec.get())
-            .requestTimeout(Duration.apply(timeout, TimeUnit.MILLISECONDS))
-            .hostConnectionLimit(numThreads));
-    
+  public ZuFinagleService<Req,Res> getService(InetSocketAddress addr) {
+    Service<Req, Res> client = buildFinagleService(addr);
     return getService(client);
   }
   
-  abstract public ZuFinagleService getService(Service<ThriftClientRequest,byte[]> client);
+  abstract public ZuFinagleService<Req,Res> getService(Service<Req,Res> client);
 
 }
 
