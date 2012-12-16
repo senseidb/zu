@@ -4,6 +4,7 @@ import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -70,8 +71,8 @@ public class ZuFinagleHttpTest {
     
     // building client via zu
     
-    ZuFinagleHttpServiceFactory clientFacotry = new ZuFinagleHttpServiceFactory(1, 1000);
-    ZuFinagleService<HttpRequest,HttpResponse> zuClient = clientFacotry.getService(new InetSocketAddress("localhost",port));
+    ZuFinagleHttpServiceFactory clientFactory = new ZuFinagleHttpServiceFactory(1, 1000);
+    ZuFinagleService<HttpRequest,HttpResponse> zuClient = clientFactory.getService(new InetSocketAddress("localhost",port));
     
     Service<HttpRequest,HttpResponse> finagleClient = zuClient.getFinagleSvc();
     
@@ -103,17 +104,36 @@ public class ZuFinagleHttpTest {
       }
     };
     
+
+    ZuFinagleHttpServiceFactory clientFactory = new ZuFinagleHttpServiceFactory(1, 1000);
+    
     ZuCluster<ZuFinagleService<HttpRequest, HttpResponse>> cluster = 
         new ZuCluster<ZuFinagleService<HttpRequest, HttpResponse>>(new InetSocketAddress("localhost",zkport),
-        partitionInfoReader, new ZuFinagleHttpServiceFactory(10), "test-finagle-cluster");
+        partitionInfoReader, "test-finagle-cluster");
     
-    final AtomicReference<Map<Integer, ArrayList<ZuFinagleService<HttpRequest, HttpResponse>>>> clusterViewRef = new AtomicReference<Map<Integer, ArrayList<ZuFinagleService<HttpRequest, HttpResponse>>>>(null);
-    cluster.addClusterEventListener(new ZuClusterEventListener<ZuFinagleService<HttpRequest,HttpResponse>>() {
+    
+    
+    final Map<InetSocketAddress,Service<HttpRequest,HttpResponse>> svcMap = 
+        Collections.synchronizedMap(new HashMap<InetSocketAddress,Service<HttpRequest,HttpResponse>>());
+    
+    
+    final AtomicReference<Map<Integer, ArrayList<InetSocketAddress>>> clusterViewRef = new AtomicReference<Map<Integer, ArrayList<InetSocketAddress>>>(null);
+    cluster.addClusterEventListener(new ZuClusterEventListener() {
       
       @Override
       public void clusterChanged(
-          Map<Integer, ArrayList<ZuFinagleService<HttpRequest, HttpResponse>>> clusterView) {
+          Map<Integer, ArrayList<InetSocketAddress>> clusterView) {
         clusterViewRef.set(clusterView);
+      }
+
+      @Override
+      public void nodesRemovedFromCluster(List<InetSocketAddress> nodes) {
+        for (InetSocketAddress node : nodes){
+          Service<HttpRequest,HttpResponse> svc = svcMap.get(node);
+          if (svc != null){
+            svc.release();
+          }
+        }
       }
     });
     
@@ -123,8 +143,10 @@ public class ZuFinagleHttpTest {
     EndpointStatus e2 = cluster.join(new InetSocketAddress("localhost",10002));
     buildLocalServer(10003,"2");
     EndpointStatus e3 = cluster.join(new InetSocketAddress("localhost",10003));
+    
+    
    
-    Map<Integer, ArrayList<ZuFinagleService<HttpRequest, HttpResponse>>> clusterView;
+    Map<Integer, ArrayList<InetSocketAddress>> clusterView;
     while(true){
       clusterView = clusterViewRef.get();
       if (clusterView != null && clusterView.size() == 3) break;
@@ -138,10 +160,15 @@ public class ZuFinagleHttpTest {
     HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/");
     
     try{
-      for (Entry<Integer,ArrayList<ZuFinagleService<HttpRequest, HttpResponse>>> entry : clusterView.entrySet()){
+      for (Entry<Integer,ArrayList<InetSocketAddress>> entry : clusterView.entrySet()){
         Integer part = entry.getKey();
-        ZuFinagleService<HttpRequest, HttpResponse> zuSvc = entry.getValue().get(0);
-        Service<HttpRequest,HttpResponse> finalgeSvc = zuSvc.getFinagleSvc();
+        InetSocketAddress addr = entry.getValue().get(0);
+        
+        Service<HttpRequest,HttpResponse> finalgeSvc = svcMap.get(addr);
+        if (finalgeSvc == null){
+          finalgeSvc = clientFactory.buildFinagleService(addr);
+          svcMap.put(addr, finalgeSvc);
+        }
         HttpResponse resp = finalgeSvc.apply(request).get();
         String rs = new String(resp.getContent().array());
         

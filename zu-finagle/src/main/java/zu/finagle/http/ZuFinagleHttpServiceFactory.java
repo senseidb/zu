@@ -26,7 +26,7 @@ public class ZuFinagleHttpServiceFactory extends
     super(numThreads, timeout);
   }
 
-  protected final Service<HttpRequest,HttpResponse> buildFinagleService(InetSocketAddress addr){
+  public final Service<HttpRequest,HttpResponse> buildFinagleService(InetSocketAddress addr){
     return 
         ClientBuilder.safeBuild(ClientBuilder.get()
             .hosts(addr)

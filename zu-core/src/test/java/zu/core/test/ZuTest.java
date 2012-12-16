@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -30,7 +31,7 @@ public class ZuTest {
   static int zkport = 21818;
 
   static NIOServerCnxn.Factory standaloneServerFactory;
-  static File dir = new File("/tmp/zu-test/zookeeper");
+  static File dir = new File("/tmp/zu-core-test");
   
   
   @BeforeClass
@@ -38,13 +39,13 @@ public class ZuTest {
     standaloneServerFactory = Util.startZkServer(zkport, dir);
   }
   
-  static void validate(Map<Integer,Set<Integer>> expected, Map<Integer,ArrayList<MockZuService>> view){
-    for (Entry<Integer,ArrayList<MockZuService>> entry : view.entrySet()){
+  static void validate(Map<Integer,Set<Integer>> expected, Map<Integer,ArrayList<InetSocketAddress>> view){
+    for (Entry<Integer,ArrayList<InetSocketAddress>> entry : view.entrySet()){
       Integer key = entry.getKey();
-      ArrayList<MockZuService> list = entry.getValue();
+      ArrayList<InetSocketAddress> list = entry.getValue();
       HashSet<Integer> ports = new HashSet<Integer>();
-      for (MockZuService svc : list){
-        ports.add(svc.getAddress().getPort());
+      for (InetSocketAddress svc : list){
+        ports.add(svc.getPort());
       }
       Set<Integer> expectedSet = expected.remove(key);
       TestCase.assertNotNull(expectedSet);
@@ -55,7 +56,7 @@ public class ZuTest {
   
   @Test
   public void testBasic() throws Exception{
-    ZuCluster<MockZuService> mockCluster = new ZuCluster<MockZuService>(new InetSocketAddress(zkport), MockZuService.PartitionReader, MockZuService.Factory, "/core/test1");
+    ZuCluster<MockZuService> mockCluster = new ZuCluster<MockZuService>(new InetSocketAddress(zkport), MockZuService.PartitionReader, "/core/test1");
     
     MockZuService s1 = new MockZuService(new InetSocketAddress(1));
     
@@ -68,12 +69,17 @@ public class ZuTest {
     
     final AtomicBoolean flag = new AtomicBoolean(false);
     
-    mockCluster.addClusterEventListener(new ZuClusterEventListener<MockZuService>() {
+    mockCluster.addClusterEventListener(new ZuClusterEventListener() {
       
       @Override
-      public void clusterChanged(Map<Integer, ArrayList<MockZuService>> clusterView) {
+      public void clusterChanged(Map<Integer, ArrayList<InetSocketAddress>> clusterView) {
         validate(answer,clusterView);
         flag.set(true);
+      }
+
+      @Override
+      public void nodesRemovedFromCluster(List<InetSocketAddress> nodes) {
+        
       }
     });
 
@@ -89,7 +95,7 @@ public class ZuTest {
   
   @Test
   public void testAllNodesJoined() throws Exception{
-    ZuCluster<MockZuService> mockCluster = new ZuCluster<MockZuService>(new InetSocketAddress(zkport), MockZuService.PartitionReader, MockZuService.Factory, "/core/test2");
+    ZuCluster<MockZuService> mockCluster = new ZuCluster<MockZuService>(new InetSocketAddress(zkport), MockZuService.PartitionReader, "/core/test2");
     
     MockZuService s1 = new MockZuService(new InetSocketAddress(1));
     MockZuService s2 = new MockZuService(new InetSocketAddress(2));
@@ -104,14 +110,19 @@ public class ZuTest {
     
     final AtomicBoolean flag = new AtomicBoolean(false);
     
-    mockCluster.addClusterEventListener(new ZuClusterEventListener<MockZuService>() {  
+    mockCluster.addClusterEventListener(new ZuClusterEventListener() {  
       @Override
-      public void clusterChanged(Map<Integer, ArrayList<MockZuService>> clusterView) {
+      public void clusterChanged(Map<Integer, ArrayList<InetSocketAddress>> clusterView) {
         int numPartsJoined = clusterView.size();
         if (numPartsJoined == 4){
           validate(answer,clusterView);
           flag.set(true);
         }
+      }
+
+      @Override
+      public void nodesRemovedFromCluster(List<InetSocketAddress> nodes) {
+        
       }
     });
 
