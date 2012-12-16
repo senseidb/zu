@@ -61,29 +61,27 @@ public class ZuTest {
     for (Entry<Integer,ArrayList<MockZuService>> entry : view.entrySet()){
       Integer key = entry.getKey();
       ArrayList<MockZuService> list = entry.getValue();
-      HashSet<Integer> parts = new HashSet<Integer>();
+      HashSet<Integer> ports = new HashSet<Integer>();
       for (MockZuService svc : list){
-        List<Integer> partitionList = MockZuService.PartitionReader.getPartitionFor(svc.getAddress());
-        parts.addAll(partitionList);
+        ports.add(svc.getAddress().getPort());
       }
-      TestCase.assertTrue(parts.contains(key));
       Set<Integer> expectedSet = expected.remove(key);
       TestCase.assertNotNull(expectedSet);
-      TestCase.assertEquals(expectedSet, parts);
+      TestCase.assertEquals(expectedSet, ports);
     }
     TestCase.assertTrue(expected.isEmpty());
   }
   
   @Test
   public void testBasic() throws Exception{
-    ZuCluster<MockZuService> mockCluster = new ZuCluster<MockZuService>(new InetSocketAddress(zkport), MockZuService.PartitionReader, MockZuService.Factory, "/testcluster1");
+    ZuCluster<MockZuService> mockCluster = new ZuCluster<MockZuService>(new InetSocketAddress(zkport), MockZuService.PartitionReader, MockZuService.Factory, "/core/test1");
     
     MockZuService s1 = new MockZuService(new InetSocketAddress(1));
     
     final Map<Integer,Set<Integer>> answer = new HashMap<Integer,Set<Integer>>();
     
-    answer.put(0, new HashSet<Integer>(Arrays.asList(0,1)));
-    answer.put(1, new HashSet<Integer>(Arrays.asList(0,1)));
+    answer.put(0, new HashSet<Integer>(Arrays.asList(1)));
+    answer.put(1, new HashSet<Integer>(Arrays.asList(1)));
     
     
     
@@ -106,6 +104,48 @@ public class ZuTest {
     }
     
     mockCluster.leave(e1);
+  }
+  
+  @Test
+  public void testAllNodesJoined() throws Exception{
+    ZuCluster<MockZuService> mockCluster = new ZuCluster<MockZuService>(new InetSocketAddress(zkport), MockZuService.PartitionReader, MockZuService.Factory, "/core/test2");
+    
+    MockZuService s1 = new MockZuService(new InetSocketAddress(1));
+    MockZuService s2 = new MockZuService(new InetSocketAddress(2));
+    MockZuService s3 = new MockZuService(new InetSocketAddress(3));
+    
+    final Map<Integer,Set<Integer>> answer = new HashMap<Integer,Set<Integer>>();
+    
+    answer.put(0, new HashSet<Integer>(Arrays.asList(1)));
+    answer.put(1, new HashSet<Integer>(Arrays.asList(1,2)));
+    answer.put(2, new HashSet<Integer>(Arrays.asList(2,3)));
+    answer.put(3, new HashSet<Integer>(Arrays.asList(3)));
+    
+    final AtomicBoolean flag = new AtomicBoolean(false);
+    
+    mockCluster.addClusterEventListener(new ZuClusterEventListener<MockZuService>() {  
+      @Override
+      public void clusterChanged(Map<Integer, ArrayList<MockZuService>> clusterView) {
+        int numPartsJoined = clusterView.size();
+        if (numPartsJoined == 4){
+          validate(answer,clusterView);
+          flag.set(true);
+        }
+      }
+    });
+
+   
+    EndpointStatus e1 = mockCluster.join(s1);
+    EndpointStatus e2 = mockCluster.join(s2);
+    EndpointStatus e3 = mockCluster.join(s3);
+    
+    while(!flag.get()){
+      Thread.sleep(10);
+    }
+    
+    mockCluster.leave(e1);
+    mockCluster.leave(e2);
+    mockCluster.leave(e3);
   }
   
   

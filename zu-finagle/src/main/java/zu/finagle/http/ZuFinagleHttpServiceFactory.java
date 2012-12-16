@@ -6,7 +6,6 @@ import java.util.concurrent.TimeUnit;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 
-import zu.finagle.ZuFinagleService;
 import zu.finagle.ZuFinagleServiceFactory;
 
 import com.twitter.finagle.Service;
@@ -20,7 +19,6 @@ public class ZuFinagleHttpServiceFactory extends
   public ZuFinagleHttpServiceFactory(int numThreads, long timeout) {
     super(numThreads, timeout);
   }
-  
 
   protected final Service<HttpRequest,HttpResponse> buildFinagleService(InetSocketAddress addr){
     return 
@@ -30,12 +28,4 @@ public class ZuFinagleHttpServiceFactory extends
         .requestTimeout(Duration.apply(timeout, TimeUnit.MILLISECONDS))
         .hostConnectionLimit(numThreads));
   }
-  
-
-  @Override
-  public ZuFinagleService<HttpRequest, HttpResponse> getService(
-      Service<HttpRequest, HttpResponse> client) {
-    return null;
-  }
-
 }

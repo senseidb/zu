@@ -6,7 +6,7 @@ import zu.core.cluster.ZuService;
 
 import com.twitter.finagle.Service;
 
-public abstract class ZuFinagleService<Req,Res> implements ZuService {
+public class ZuFinagleService<Req,Res> implements ZuService {
   private final Service<Req, Res> finagleSvc;
   private final InetSocketAddress addr;
   
@@ -18,6 +18,10 @@ public abstract class ZuFinagleService<Req,Res> implements ZuService {
   @Override
   public InetSocketAddress getAddress() {
     return addr;
+  }
+  
+  public Service<Req,Res> getFinagleSvc(){
+    return finagleSvc;
   }
 
   @Override

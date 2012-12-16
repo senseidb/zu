@@ -20,11 +20,7 @@ public abstract class ZuFinagleServiceFactory<Req,Res> implements ZuServiceFacto
   
   @Override
   public ZuFinagleService<Req,Res> getService(InetSocketAddress addr) {
-    Service<Req, Res> client = buildFinagleService(addr);
-    return getService(client);
+    return new ZuFinagleService<Req,Res>(buildFinagleService(addr), addr);
   }
-  
-  abstract public ZuFinagleService<Req,Res> getService(Service<Req,Res> client);
-
 }
 
