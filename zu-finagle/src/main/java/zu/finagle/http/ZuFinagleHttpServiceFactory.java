@@ -16,6 +16,12 @@ import com.twitter.util.Duration;
 public class ZuFinagleHttpServiceFactory extends
     ZuFinagleServiceFactory<HttpRequest, HttpResponse> {
 
+  static final long DEFAULT_TIME_OUT = 2000;
+  
+  public ZuFinagleHttpServiceFactory(int numThreads){
+    this(numThreads, DEFAULT_TIME_OUT);
+  }
+  
   public ZuFinagleHttpServiceFactory(int numThreads, long timeout) {
     super(numThreads, timeout);
   }

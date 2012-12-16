@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -15,13 +14,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import junit.framework.TestCase;
 
 import org.apache.zookeeper.server.NIOServerCnxn;
-import org.apache.zookeeper.server.ZooKeeperServer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import zu.core.cluster.ZuCluster;
 import zu.core.cluster.ZuClusterEventListener;
+import zu.core.cluster.util.Util;
 
 import com.twitter.common.zookeeper.ServerSet.EndpointStatus;
 
@@ -31,30 +30,12 @@ public class ZuTest {
   static int zkport = 21818;
 
   static NIOServerCnxn.Factory standaloneServerFactory;
-  static ZooKeeperServer server;
-  static File dir;
+  static File dir = new File("/tmp/zu-test/zookeeper");
   
-  private static void rmDir(File dir){
-    if (dir.isDirectory()){
-      File[] files = dir.listFiles();
-      for (File f : files){
-        rmDir(f);
-      }
-    }
-    dir.delete();
-  }
   
   @BeforeClass
   public static void init() throws Exception{
-    int numConnections = 10;
-    int tickTime = 2000;
-
-    dir = new File("/tmp/zookeeper").getAbsoluteFile();
-    System.out.println("dir: "+dir);
-
-    server = new ZooKeeperServer(dir, dir, tickTime);
-    standaloneServerFactory = new NIOServerCnxn.Factory(new InetSocketAddress(zkport), numConnections);
-    standaloneServerFactory.startup(server); 
+    standaloneServerFactory = Util.startZkServer(zkport, dir);
   }
   
   static void validate(Map<Integer,Set<Integer>> expected, Map<Integer,ArrayList<MockZuService>> view){
@@ -97,7 +78,7 @@ public class ZuTest {
     });
 
    
-    EndpointStatus e1 = mockCluster.join(s1);
+    EndpointStatus e1 = mockCluster.join(s1.getAddress());
     
     while(!flag.get()){
       Thread.sleep(10);
@@ -135,9 +116,9 @@ public class ZuTest {
     });
 
    
-    EndpointStatus e1 = mockCluster.join(s1);
-    EndpointStatus e2 = mockCluster.join(s2);
-    EndpointStatus e3 = mockCluster.join(s3);
+    EndpointStatus e1 = mockCluster.join(s1.getAddress());
+    EndpointStatus e2 = mockCluster.join(s2.getAddress());
+    EndpointStatus e3 = mockCluster.join(s3.getAddress());
     
     while(!flag.get()){
       Thread.sleep(10);
@@ -151,9 +132,8 @@ public class ZuTest {
   
   @AfterClass
   public static void tearDown(){
-    server.shutdown();
     standaloneServerFactory.shutdown();
-    rmDir(dir);
+    Util.rmDir(dir);
   }
 
 }

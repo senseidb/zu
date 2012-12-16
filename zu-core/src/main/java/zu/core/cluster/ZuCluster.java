@@ -33,7 +33,6 @@ public class ZuCluster<S extends ZuService> implements HostChangeMonitor<Service
   private final List<ZuClusterEventListener<S>> lsnrs;
   private final ZuServiceFactory<S> svcFactory;
   private final PartitionInfoReader partitionReader;
-  private volatile boolean monitored = false;
   
   private static class NodeClusterView<S extends ZuService>{
     Map<Endpoint,S> nodesMap = new HashMap<Endpoint,S>();
@@ -67,6 +66,9 @@ public class ZuCluster<S extends ZuService> implements HostChangeMonitor<Service
     ZooKeeperClient zclient = new ZooKeeperClient(Amount.of(timeout,
         Time.SECONDS), Credentials.NONE, zookeeperAddr);
     
+    if (!clusterName.startsWith("/")){
+      clusterName = "/" + clusterName;
+    }
     serverSet = new ServerSetImpl(zclient, clusterName);
     serverSet.monitor(this);
   }
@@ -75,8 +77,8 @@ public class ZuCluster<S extends ZuService> implements HostChangeMonitor<Service
     lsnrs.add(lsnr);
   }
 
-  public EndpointStatus join(S svc) throws JoinException, InterruptedException {
-    return serverSet.join(svc.getAddress(), Collections.EMPTY_MAP, Status.ALIVE);
+  public EndpointStatus join(InetSocketAddress addr) throws JoinException, InterruptedException {
+    return serverSet.join(addr, Collections.<String, InetSocketAddress>emptyMap(), Status.ALIVE);
   }
   
   public void leave(EndpointStatus status) throws UpdateException{
