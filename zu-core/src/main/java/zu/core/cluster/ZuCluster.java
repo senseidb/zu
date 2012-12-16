@@ -27,18 +27,18 @@ import com.twitter.thrift.Endpoint;
 import com.twitter.thrift.ServiceInstance;
 import com.twitter.thrift.Status;
 
-public class ZuCluster<S extends ZuService> implements HostChangeMonitor<ServiceInstance>{
+public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
   private static final int DEFAULT_TIMEOUT = 300;
   private final ServerSet serverSet;
   private final List<ZuClusterEventListener> lsnrs;
   private final PartitionInfoReader partitionReader;
   
-  private static class NodeClusterView<S extends ZuService>{
+  private static class NodeClusterView{
     Map<Endpoint,InetSocketAddress> nodesMap = new HashMap<Endpoint,InetSocketAddress>();
     Map<Integer,ArrayList<InetSocketAddress>> partMap = new HashMap<Integer,ArrayList<InetSocketAddress>>();
   }
   
-  private AtomicReference<NodeClusterView<S>> clusterView = new AtomicReference<NodeClusterView<S>>(new NodeClusterView<S>());
+  private AtomicReference<NodeClusterView> clusterView = new AtomicReference<NodeClusterView>(new NodeClusterView());
 
   public ZuCluster(String host, int port, PartitionInfoReader partitionReader, String clusterName) throws MonitorException {
     this(new InetSocketAddress(host,port), partitionReader, clusterName, DEFAULT_TIMEOUT);
@@ -85,8 +85,8 @@ public class ZuCluster<S extends ZuService> implements HostChangeMonitor<Service
 
   @Override
   public void onChange(ImmutableSet<ServiceInstance> hostSet) {
-    NodeClusterView<S> oldView = clusterView.get();
-    NodeClusterView<S> newView = new NodeClusterView<S>();
+    NodeClusterView oldView = clusterView.get();
+    NodeClusterView newView = new NodeClusterView();
     List<InetSocketAddress> cleanupList = new LinkedList<InetSocketAddress>();
     
     for (ServiceInstance si : hostSet){

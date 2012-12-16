@@ -7,20 +7,10 @@ import java.util.List;
 import java.util.Map;
 
 import zu.core.cluster.PartitionInfoReader;
-import zu.core.cluster.ZuService;
-import zu.core.cluster.ZuServiceFactory;
 
-public class MockZuService implements ZuService{
+public class ZuTestUtil{
 
   public static final Map<Integer,List<Integer>> CLUSTER_VIEW;
-  
-  public static ZuServiceFactory<MockZuService> Factory = new ZuServiceFactory<MockZuService>() {
-
-    @Override
-    public MockZuService getService(InetSocketAddress addr) {
-      return new MockZuService(addr);
-    }
-  };
   
   public static PartitionInfoReader PartitionReader = new PartitionInfoReader() {
     
@@ -36,20 +26,5 @@ public class MockZuService implements ZuService{
     CLUSTER_VIEW.put(1, Arrays.asList(0,1));
     CLUSTER_VIEW.put(2, Arrays.asList(1,2));
     CLUSTER_VIEW.put(3, Arrays.asList(2,3));
-  }
-  
-  private final InetSocketAddress addr;
-  public MockZuService(InetSocketAddress addr){
-    this.addr = addr;
-  }
-
-  @Override
-  public InetSocketAddress getAddress() {
-    return addr;
-  }
-
-  @Override
-  public void shutdown() {
-    
   }
 }

@@ -30,7 +30,6 @@ import zu.core.cluster.PartitionInfoReader;
 import zu.core.cluster.ZuCluster;
 import zu.core.cluster.ZuClusterEventListener;
 import zu.core.cluster.util.Util;
-import zu.finagle.ZuFinagleService;
 import zu.finagle.http.ZuFinagleHttpServiceFactory;
 
 import com.twitter.common.zookeeper.ServerSet.EndpointStatus;
@@ -72,9 +71,8 @@ public class ZuFinagleHttpTest {
     // building client via zu
     
     ZuFinagleHttpServiceFactory clientFactory = new ZuFinagleHttpServiceFactory(1, 1000);
-    ZuFinagleService<HttpRequest,HttpResponse> zuClient = clientFactory.getService(new InetSocketAddress("localhost",port));
     
-    Service<HttpRequest,HttpResponse> finagleClient = zuClient.getFinagleSvc();
+    Service<HttpRequest,HttpResponse> finagleClient = clientFactory.buildFinagleService(new InetSocketAddress("localhost",port));
     
     HttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/");
     
@@ -107,8 +105,8 @@ public class ZuFinagleHttpTest {
 
     ZuFinagleHttpServiceFactory clientFactory = new ZuFinagleHttpServiceFactory(1, 1000);
     
-    ZuCluster<ZuFinagleService<HttpRequest, HttpResponse>> cluster = 
-        new ZuCluster<ZuFinagleService<HttpRequest, HttpResponse>>(new InetSocketAddress("localhost",zkport),
+    ZuCluster cluster = 
+        new ZuCluster(new InetSocketAddress("localhost",zkport),
         partitionInfoReader, "test-finagle-cluster");
     
     
@@ -187,7 +185,5 @@ public class ZuFinagleHttpTest {
       zk.shutdown();
       Util.rmDir(dir);
     }
-     
-    
   }
 }

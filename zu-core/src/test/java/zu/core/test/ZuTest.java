@@ -56,9 +56,9 @@ public class ZuTest {
   
   @Test
   public void testBasic() throws Exception{
-    ZuCluster<MockZuService> mockCluster = new ZuCluster<MockZuService>(new InetSocketAddress(zkport), MockZuService.PartitionReader, "/core/test1");
+    ZuCluster mockCluster = new ZuCluster(new InetSocketAddress(zkport), ZuTestUtil.PartitionReader, "/core/test1");
     
-    MockZuService s1 = new MockZuService(new InetSocketAddress(1));
+    InetSocketAddress s1 = new InetSocketAddress(1);
     
     final Map<Integer,Set<Integer>> answer = new HashMap<Integer,Set<Integer>>();
     
@@ -84,7 +84,7 @@ public class ZuTest {
     });
 
    
-    EndpointStatus e1 = mockCluster.join(s1.getAddress());
+    EndpointStatus e1 = mockCluster.join(s1);
     
     while(!flag.get()){
       Thread.sleep(10);
@@ -95,11 +95,11 @@ public class ZuTest {
   
   @Test
   public void testAllNodesJoined() throws Exception{
-    ZuCluster<MockZuService> mockCluster = new ZuCluster<MockZuService>(new InetSocketAddress(zkport), MockZuService.PartitionReader, "/core/test2");
+    ZuCluster mockCluster = new ZuCluster(new InetSocketAddress(zkport), ZuTestUtil.PartitionReader, "/core/test2");
     
-    MockZuService s1 = new MockZuService(new InetSocketAddress(1));
-    MockZuService s2 = new MockZuService(new InetSocketAddress(2));
-    MockZuService s3 = new MockZuService(new InetSocketAddress(3));
+    InetSocketAddress s1 = new InetSocketAddress(1);
+    InetSocketAddress s2 = new InetSocketAddress(2);
+    InetSocketAddress s3 = new InetSocketAddress(3);
     
     final Map<Integer,Set<Integer>> answer = new HashMap<Integer,Set<Integer>>();
     
@@ -127,9 +127,9 @@ public class ZuTest {
     });
 
    
-    EndpointStatus e1 = mockCluster.join(s1.getAddress());
-    EndpointStatus e2 = mockCluster.join(s2.getAddress());
-    EndpointStatus e3 = mockCluster.join(s3.getAddress());
+    EndpointStatus e1 = mockCluster.join(s1);
+    EndpointStatus e2 = mockCluster.join(s2);
+    EndpointStatus e3 = mockCluster.join(s3);
     
     while(!flag.get()){
       Thread.sleep(10);
