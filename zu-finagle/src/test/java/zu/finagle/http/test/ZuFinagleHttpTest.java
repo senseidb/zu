@@ -4,7 +4,6 @@ import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -30,6 +29,7 @@ import zu.core.cluster.PartitionInfoReader;
 import zu.core.cluster.ZuCluster;
 import zu.core.cluster.ZuClusterEventListener;
 import zu.core.cluster.util.Util;
+import zu.finagle.ZuFinalgeServiceRegistry;
 import zu.finagle.http.ZuFinagleHttpServiceFactory;
 
 import com.twitter.common.zookeeper.ServerSet.EndpointStatus;
@@ -105,14 +105,16 @@ public class ZuFinagleHttpTest {
 
     ZuFinagleHttpServiceFactory clientFactory = new ZuFinagleHttpServiceFactory(1, 1000);
     
+    String clusterName = "test-finagle-cluster";
     ZuCluster cluster = 
         new ZuCluster(new InetSocketAddress("localhost",zkport),
-        partitionInfoReader, "test-finagle-cluster");
+        partitionInfoReader, clusterName);
+    
+    final ZuFinalgeServiceRegistry svcRegistry = ZuFinalgeServiceRegistry.getInstance(clusterName);
     
     
-    
-    final Map<InetSocketAddress,Service<HttpRequest,HttpResponse>> svcMap = 
-        Collections.synchronizedMap(new HashMap<InetSocketAddress,Service<HttpRequest,HttpResponse>>());
+    //final Map<InetSocketAddress,Service<HttpRequest,HttpResponse>> svcMap = 
+      //  Collections.synchronizedMap(new HashMap<InetSocketAddress,Service<HttpRequest,HttpResponse>>());
     
     
     final AtomicReference<Map<Integer, ArrayList<InetSocketAddress>>> clusterViewRef = new AtomicReference<Map<Integer, ArrayList<InetSocketAddress>>>(null);
@@ -127,7 +129,7 @@ public class ZuFinagleHttpTest {
       @Override
       public void nodesRemovedFromCluster(List<InetSocketAddress> nodes) {
         for (InetSocketAddress node : nodes){
-          Service<HttpRequest,HttpResponse> svc = svcMap.get(node);
+          Service<HttpRequest,HttpResponse> svc = svcRegistry.removeService(node);
           if (svc != null){
             svc.release();
           }
@@ -162,11 +164,7 @@ public class ZuFinagleHttpTest {
         Integer part = entry.getKey();
         InetSocketAddress addr = entry.getValue().get(0);
         
-        Service<HttpRequest,HttpResponse> finalgeSvc = svcMap.get(addr);
-        if (finalgeSvc == null){
-          finalgeSvc = clientFactory.buildFinagleService(addr);
-          svcMap.put(addr, finalgeSvc);
-        }
+        Service<HttpRequest,HttpResponse> finalgeSvc = svcRegistry.getService(addr, clientFactory);
         HttpResponse resp = finalgeSvc.apply(request).get();
         String rs = new String(resp.getContent().array());
         
