@@ -51,7 +51,7 @@ Zu comes from the Chinese character: 组, which means a group or a set.
 Need more, check out the unit tests:
 
 Simple cluster setup:
-[Example 1:](https://github.com/javasoze/zu/blob/master/zu-core/src/test/java/zu/core/test/ZuTest.java)
+[Example 1.](https://github.com/javasoze/zu/blob/master/zu-core/src/test/java/zu/core/test/ZuTest.java)
 
 A full finagle based http cluster of servers:
-[Example 2:](https://github.com/javasoze/zu/blob/master/zu-finagle/src/test/java/zu/finagle/http/test/ZuFinagleHttpTest.java)
+[Example 2.](https://github.com/javasoze/zu/blob/master/zu-finagle/src/test/java/zu/finagle/http/test/ZuFinagleHttpTest.java)
