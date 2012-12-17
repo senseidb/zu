@@ -15,3 +15,20 @@ Zu comes from the Chinese character: 组, which means a group or a set.
 + Simple api
 + Manages partitioned data
 + Integration with Twitter's Finagle
+
+### Code snippet:
+
+    // Zookeepr location
+    String zkHost = ...
+    int zkPort = ...
+
+    // implementation provides a mapping between a url and its partitions
+    PartitionInfoReader partitionInfoReader = ...
+
+    ZuCluster cluster = new ZuCluster(new InetSocketAddress(zkHost,zkPort), partitionInfoReader, "mycluster");
+
+    // join a cluster
+    EndPointStatus endpoint = cluster.join(new InetSocketAddress(host,port));
+
+    // leaving a cluster
+    cluster.leave(endpoint);
