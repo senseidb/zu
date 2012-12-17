@@ -27,6 +27,19 @@ Zu comes from the Chinese character: 组, which means a group or a set.
 
     ZuCluster cluster = new ZuCluster(new InetSocketAddress(zkHost,zkPort), partitionInfoReader, "mycluster");
 
+    cluster.addClusterEventListener(new ZuClusterEventListener() {
+
+	      @Override
+	      public void clusterChanged(Map<Integer, ArrayList<InetSocketAddress>> clusterView) {
+		    System.out.println("cluster changed");
+	      }
+
+	      @Override
+	      public void nodesRemovedFromCluster(List<InetSocketAddress> nodes) {
+		    System.out.println("nodes removed from cluster");
+	      }
+	 });
+
     // join a cluster
     EndPointStatus endpoint = cluster.join(new InetSocketAddress(host,port));
 
