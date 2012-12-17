@@ -16,6 +16,15 @@ Zu comes from the Chinese character: 组, which means a group or a set.
 + Manages partitioned data
 + Integration with Twitter's Finagle
 
+### Build it:
+
+    mvn clean package
+
+2 artifacts:
+
++ zu-core - core library
++ zu-finagle - Finagle support
+
 ### Code snippet:
 
     // Zookeepr location
