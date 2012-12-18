@@ -35,12 +35,6 @@
 					<encoding>UTF-8</encoding>
 				</configuration>
 			</plugin>
-			<plugin>
-				<artifactId>maven-deploy-plugin</artifactId>
-				<configuration>
-					<skip>true</skip> <!-- No need to deploy the reactor -->
-				</configuration>
-			</plugin>
 		</plugins>
 	</build>
 
