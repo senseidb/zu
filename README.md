@@ -25,6 +25,15 @@ Zu comes from the Chinese character: 组, which means a group or a set.
 + zu-core - core library
 + zu-finagle - Finagle support
 
+### Maven:
+
+##### Core:
+    <groupid>com.senseidb.zu</groupid>
+    <artifactId>zu-core</artifactId>
+##### Finagle:
+    <groupid>com.senseidb.zu</groupid>
+    <artifactId>zu-finagle</artifactId>
+
 ### Code snippet:
 
     // Zookeepr location
