@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>zu</groupId>
+		<groupId>com.senseidb.zu</groupId>
 		<artifactId>zu-project</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
@@ -53,7 +53,7 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>zu</groupId>
+			<groupId>com.senseidb.zu</groupId>
 			<artifactId>zu-core</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
