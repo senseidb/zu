@@ -9,7 +9,7 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
 public interface RoutingAlgorithm {
-  InetSocketAddress route(int partition, ArrayList<InetSocketAddress> nodes);
+  InetSocketAddress route(byte[] key, int partition, ArrayList<InetSocketAddress> nodes);
   
   public static final RoutingAlgorithm Random = new RandomAlgorithm();
   public static final RoutingAlgorithm RoundRobin = new RoundRobinAlgorithm();
@@ -18,7 +18,7 @@ public interface RoutingAlgorithm {
     private Random rand = new Random();
     
     @Override
-    public InetSocketAddress route(int partition,
+    public InetSocketAddress route(byte[] key, int partition,
         ArrayList<InetSocketAddress> nodes) {
       return nodes.get(rand.nextInt(nodes.size()));
     }
@@ -27,7 +27,7 @@ public interface RoutingAlgorithm {
   public static class RoundRobinAlgorithm implements RoutingAlgorithm {
     private final Map<Integer,AtomicLong> countMap = Collections.synchronizedMap(new HashMap<Integer,AtomicLong>());
     @Override
-    public InetSocketAddress route(int partition,
+    public InetSocketAddress route(byte[] key, int partition,
         ArrayList<InetSocketAddress> nodes) {
       AtomicLong idx = countMap.get(partition);
       long idxVal = 0;

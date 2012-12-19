@@ -9,12 +9,12 @@ import java.util.Set;
 
 public class NodeSelector {
 
-  public static Map<Integer, InetSocketAddress> selectNodes(Map<Integer, ArrayList<InetSocketAddress>> clusterView, 
+  public static Map<Integer, InetSocketAddress> selectNodes(byte[] key, Map<Integer, ArrayList<InetSocketAddress>> clusterView, 
       RoutingAlgorithm routingAlg){
-    return selectNodes(null,  clusterView, routingAlg);
+    return selectNodes(key, null,  clusterView, routingAlg);
   }
   
-  public static Map<Integer, InetSocketAddress> selectNodes(Set<Integer> partitions,
+  public static Map<Integer, InetSocketAddress> selectNodes(byte[] key, Set<Integer> partitions,
       Map<Integer, ArrayList<InetSocketAddress>> clusterView, 
       RoutingAlgorithm routingAlg){
     Iterator<Integer> partIter = partitions == null ? clusterView.keySet().iterator() : partitions.iterator();
@@ -23,7 +23,7 @@ public class NodeSelector {
     while(partIter.hasNext()){
       Integer part = partIter.next();
       ArrayList<InetSocketAddress> nodeList = clusterView.get(part);
-      InetSocketAddress node = routingAlg.route(part, nodeList);
+      InetSocketAddress node = routingAlg.route(key, part, nodeList);
       selectedNodes.put(part, node);
     }
     
