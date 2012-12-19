@@ -20,6 +20,8 @@ public interface RoutingAlgorithm {
     @Override
     public InetSocketAddress route(byte[] key, int partition,
         ArrayList<InetSocketAddress> nodes) {
+      
+      if (nodes.isEmpty()) return null;
       return nodes.get(rand.nextInt(nodes.size()));
     }
   }
@@ -29,6 +31,7 @@ public interface RoutingAlgorithm {
     @Override
     public InetSocketAddress route(byte[] key, int partition,
         ArrayList<InetSocketAddress> nodes) {
+      if (nodes.isEmpty()) return null;
       AtomicLong idx = countMap.get(partition);
       long idxVal = 0;
       if (idx == null){
@@ -36,9 +39,9 @@ public interface RoutingAlgorithm {
         countMap.put(partition, idx);
       }
       else{
-        idxVal = idx.get();
+        idxVal = idx.incrementAndGet();
       }
-      return nodes.get((int)((long)nodes.size()%idxVal));
+      return nodes.get((int)(idxVal % (long)nodes.size()));
     }
   }
 }
