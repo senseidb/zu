@@ -82,7 +82,7 @@ public class ZuRoutingTest {
   public void testConsistentHash(){
     RoutingAlgorithm alg = new ConsistentHashRoutingAlgorithm();
     alg.clusterChanged(ClusterView);
-    int numIter = 10;
+    int numIter = 50;
     String key = "test";
 
     Set<Integer> portSet = new HashSet<Integer>();
@@ -91,5 +91,12 @@ public class ZuRoutingTest {
       portSet.add(addr.getPort());
     }
     TestCase.assertEquals(1, portSet.size());
+    
+    for (int i =0; i< numIter; ++i){
+      key = "test"+i;
+      InetSocketAddress addr = alg.route(key.getBytes(), 1);
+      portSet.add(addr.getPort());
+    }
+    TestCase.assertEquals(3, portSet.size());
   }
 }
