@@ -58,38 +58,19 @@
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 		<dependency>
-			<groupId>com.twitter.common</groupId>
-			<artifactId>zookeeper</artifactId>
-			<version>0.0.25</version>
-			<exclusions>
-			  <exclusion>
-			    <groupId>javax.jms</groupId>
-			    <artifactId>jms</artifactId>
-			  </exclusion>
-			  <exclusion>
-			    <groupId>com.sun.jmx</groupId>
-			    <artifactId>jmxri</artifactId>
-			  </exclusion>
-			  <exclusion>
-			    <groupId>com.sun.jdmk</groupId>
-			    <artifactId>jmxtools</artifactId>
-			  </exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
 			<groupId>com.twitter</groupId>
 			<artifactId>finagle-core</artifactId>
-			<version>5.3.9</version>
+			<version>6.1.1</version>
 		</dependency>
 		<dependency>
 			<groupId>com.twitter</groupId>
 			<artifactId>finagle-http</artifactId>
-			<version>5.3.9</version>
+			<version>6.1.1</version>
 		</dependency>
 		<dependency>
 			<groupId>com.twitter</groupId>
 			<artifactId>finagle-thrift</artifactId>
-			<version>5.3.9</version>
+			<version>6.1.1</version>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>

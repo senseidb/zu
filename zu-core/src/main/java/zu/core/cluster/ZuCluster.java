@@ -25,7 +25,6 @@ import com.twitter.common.zookeeper.ZooKeeperClient;
 import com.twitter.common.zookeeper.ZooKeeperClient.Credentials;
 import com.twitter.thrift.Endpoint;
 import com.twitter.thrift.ServiceInstance;
-import com.twitter.thrift.Status;
 
 public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
   private static final int DEFAULT_TIMEOUT = 300;
@@ -75,11 +74,11 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
   }
 
   public EndpointStatus join(InetSocketAddress addr) throws JoinException, InterruptedException {
-    return serverSet.join(addr, Collections.<String, InetSocketAddress>emptyMap(), Status.ALIVE);
+    return serverSet.join(addr, Collections.<String, InetSocketAddress>emptyMap());
   }
   
   public void leave(EndpointStatus status) throws UpdateException{
-    status.update(Status.DEAD);
+    status.leave();
   }
 
 

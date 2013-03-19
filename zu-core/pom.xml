@@ -53,9 +53,9 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>com.twitter.common</groupId>
-			<artifactId>zookeeper</artifactId>
-			<version>0.0.25</version>
+			<groupId>com.twitter.common.zookeeper</groupId>
+			<artifactId>server-set</artifactId>
+			<version>1.0.30</version>
 			<exclusions>
 			  <exclusion>
 			    <groupId>javax.jms</groupId>
