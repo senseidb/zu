@@ -107,8 +107,7 @@ public class ZuFinagleHttpTest {
     
     String clusterName = "test-finagle-cluster";
     ZuCluster cluster = 
-        new ZuCluster(new InetSocketAddress("localhost",zkport),
-        partitionInfoReader, clusterName);
+        new ZuCluster(new InetSocketAddress("localhost",zkport), clusterName);
     
     final ZuFinalgeServiceRegistry svcRegistry = ZuFinalgeServiceRegistry.getInstance(clusterName);
     
@@ -138,11 +137,11 @@ public class ZuFinagleHttpTest {
     });
     
     buildLocalServer(10001,"0");
-    EndpointStatus e1 = cluster.join(new InetSocketAddress("localhost",10001));
+    List<EndpointStatus> e1 = cluster.join(new InetSocketAddress("localhost",10001), partitionLayout.get(10001));
     buildLocalServer(10002,"1");
-    EndpointStatus e2 = cluster.join(new InetSocketAddress("localhost",10002));
+    List<EndpointStatus> e2 = cluster.join(new InetSocketAddress("localhost",10002), partitionLayout.get(10002));
     buildLocalServer(10003,"2");
-    EndpointStatus e3 = cluster.join(new InetSocketAddress("localhost",10003));
+    List<EndpointStatus> e3 = cluster.join(new InetSocketAddress("localhost",10003), partitionLayout.get(10003));
     
     
    

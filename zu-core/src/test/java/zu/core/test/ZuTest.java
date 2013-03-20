@@ -56,7 +56,7 @@ public class ZuTest {
   
   @Test
   public void testBasic() throws Exception{
-    ZuCluster mockCluster = new ZuCluster(new InetSocketAddress(zkport), ZuTestUtil.PartitionReader, "/core/test1");
+    ZuCluster mockCluster = new ZuCluster(new InetSocketAddress(zkport), "/core/test1");
     
     InetSocketAddress s1 = new InetSocketAddress(1);
     
@@ -73,8 +73,12 @@ public class ZuTest {
       
       @Override
       public void clusterChanged(Map<Integer, ArrayList<InetSocketAddress>> clusterView) {
-        validate(answer,clusterView);
-        flag.set(true);
+        int numPartsJoined = clusterView.size();
+        System.out.println("num part joined: "+numPartsJoined);
+        if (numPartsJoined == 2){
+          validate(answer,clusterView);
+          flag.set(true);
+        }
       }
 
       @Override
@@ -84,7 +88,7 @@ public class ZuTest {
     });
 
    
-    EndpointStatus e1 = mockCluster.join(s1);
+    List<EndpointStatus> e1 = mockCluster.join(s1, ZuTestUtil.CLUSTER_VIEW.get(s1.getPort()));
     
     while(!flag.get()){
       Thread.sleep(10);
@@ -95,7 +99,7 @@ public class ZuTest {
   
   @Test
   public void testAllNodesJoined() throws Exception{
-    ZuCluster mockCluster = new ZuCluster(new InetSocketAddress(zkport), ZuTestUtil.PartitionReader, "/core/test2");
+    ZuCluster mockCluster = new ZuCluster(new InetSocketAddress(zkport), "/core/test2");
     
     InetSocketAddress s1 = new InetSocketAddress(1);
     InetSocketAddress s2 = new InetSocketAddress(2);
@@ -127,9 +131,9 @@ public class ZuTest {
     });
 
    
-    EndpointStatus e1 = mockCluster.join(s1);
-    EndpointStatus e2 = mockCluster.join(s2);
-    EndpointStatus e3 = mockCluster.join(s3);
+    List<EndpointStatus> e1 = mockCluster.join(s1, ZuTestUtil.CLUSTER_VIEW.get(s1.getPort()));
+    List<EndpointStatus> e2 = mockCluster.join(s2, ZuTestUtil.CLUSTER_VIEW.get(s2.getPort()));
+    List<EndpointStatus> e3 = mockCluster.join(s3, ZuTestUtil.CLUSTER_VIEW.get(s3.getPort()));
     
     while(!flag.get()){
       Thread.sleep(10);
