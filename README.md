@@ -40,12 +40,13 @@ Zu comes from the Chinese character: 组, which means a group or a set.
     String zkHost = ...
     int zkPort = ...
 
-    ZuCluster cluster = new ZuCluster(new InetSocketAddress(zkHost,zkPort), partitionInfoReader, "mycluster");
+    ZuCluster cluster = new ZuCluster(new InetSocketAddress(zkHost,zkPort), "mycluster");
 
     cluster.addClusterEventListener(new ZuClusterEventListener() {
 
 	      @Override
 	      public void clusterChanged(Map<Integer, ArrayList<InetSocketAddress>> clusterView) {
+		    // a shard -> host mapping
 		    System.out.println("cluster changed");
 	      }
 
@@ -56,10 +57,10 @@ Zu comes from the Chinese character: 组, which means a group or a set.
 	 });
 
     // join a cluster
-    EndPointStatus endpoint = cluster.join(new InetSocketAddress(host,port), Arrays.asList(1,2));
+    List<EndPointStatus> endpoints = cluster.join(new InetSocketAddress(host,port), Arrays.asList(1,2));
 
     // leaving a cluster
-    cluster.leave(endpoint);
+    cluster.leave(endpoints);
 
 ### More details:
 
