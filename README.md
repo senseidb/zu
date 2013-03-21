@@ -40,9 +40,6 @@ Zu comes from the Chinese character: 组, which means a group or a set.
     String zkHost = ...
     int zkPort = ...
 
-    // implementation provides a mapping between a url and its partitions
-    PartitionInfoReader partitionInfoReader = ...
-
     ZuCluster cluster = new ZuCluster(new InetSocketAddress(zkHost,zkPort), partitionInfoReader, "mycluster");
 
     cluster.addClusterEventListener(new ZuClusterEventListener() {
@@ -59,7 +56,7 @@ Zu comes from the Chinese character: 组, which means a group or a set.
 	 });
 
     // join a cluster
-    EndPointStatus endpoint = cluster.join(new InetSocketAddress(host,port));
+    EndPointStatus endpoint = cluster.join(new InetSocketAddress(host,port), Arrays.asList(1,2));
 
     // leaving a cluster
     cluster.leave(endpoint);
