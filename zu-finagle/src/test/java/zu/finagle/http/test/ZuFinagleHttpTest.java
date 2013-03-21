@@ -25,7 +25,6 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.junit.Test;
 
-import zu.core.cluster.PartitionInfoReader;
 import zu.core.cluster.ZuCluster;
 import zu.core.cluster.ZuClusterEventListener;
 import zu.core.cluster.util.Util;
@@ -93,15 +92,6 @@ public class ZuFinagleHttpTest {
     partitionLayout.put(10001, Arrays.asList(0));
     partitionLayout.put(10002, Arrays.asList(1));
     partitionLayout.put(10003, Arrays.asList(2));
-    
-    PartitionInfoReader partitionInfoReader = new PartitionInfoReader() {
-      
-      @Override
-      public List<Integer> getPartitionFor(InetSocketAddress addr) {
-        return partitionLayout.get(addr.getPort());
-      }
-    };
-    
 
     ZuFinagleHttpServiceFactory clientFactory = new ZuFinagleHttpServiceFactory(1, 1000);
     
@@ -130,7 +120,7 @@ public class ZuFinagleHttpTest {
         for (InetSocketAddress node : nodes){
           Service<HttpRequest,HttpResponse> svc = svcRegistry.removeService(node);
           if (svc != null){
-            svc.release();
+            svc.close();
           }
         }
       }
