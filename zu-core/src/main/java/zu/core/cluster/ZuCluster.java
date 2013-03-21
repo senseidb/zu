@@ -74,9 +74,7 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
     ArrayList<EndpointStatus> statuses = new ArrayList<EndpointStatus>(shards.size());
     for (Integer shard : shards){
       statuses.add(serverSet.join(addr, Collections.<String, InetSocketAddress>emptyMap(), shard));
-      Thread.sleep(5000);
     }
-    System.out.println(statuses.size()+" joined");
     return statuses;
   }
   
@@ -89,8 +87,6 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
 
   @Override
   public void onChange(ImmutableSet<ServiceInstance> hostSet) {
-
-    System.out.println("hostSet: "+hostSet.size());
     NodeClusterView oldView = clusterView.get();
     NodeClusterView newView = new NodeClusterView();
     List<InetSocketAddress> cleanupList = new LinkedList<InetSocketAddress>();
@@ -107,7 +103,6 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
       }
       newView.nodesMap.put(ep, svc);
       int shardId = si.getShard();
-      System.out.println("shardid: "+shardId);
       ArrayList<InetSocketAddress> nodeList = newView.partMap.get(shardId);
       if (nodeList == null){
         nodeList = new ArrayList<InetSocketAddress>();
@@ -127,10 +122,7 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
 
     clusterView.set(newView);
     
-    System.out.println("new view: "+newView.partMap.size());
-    
     for (ZuClusterEventListener lsnr : lsnrs){
-      System.out.println("notify new view");
      lsnr.clusterChanged(newView.partMap); 
     }
   }
