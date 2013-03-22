@@ -1,6 +1,5 @@
 package zu.finagle.http.test;
 
-import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,7 +13,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import junit.framework.TestCase;
 
-import org.apache.zookeeper.server.NIOServerCnxn;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
@@ -27,18 +25,19 @@ import org.junit.Test;
 
 import zu.core.cluster.ZuCluster;
 import zu.core.cluster.ZuClusterEventListener;
-import zu.core.cluster.util.Util;
 import zu.finagle.ZuFinalgeServiceRegistry;
 import zu.finagle.http.ZuFinagleHttpServiceFactory;
 
+import com.twitter.common.zookeeper.ZooKeeperClient;
 import com.twitter.common.zookeeper.ServerSet.EndpointStatus;
+import com.twitter.common.zookeeper.testing.BaseZooKeeperTest;
 import com.twitter.finagle.Service;
 import com.twitter.finagle.builder.Server;
 import com.twitter.finagle.builder.ServerBuilder;
 import com.twitter.finagle.http.Http;
 import com.twitter.util.Future;
 
-public class ZuFinagleHttpTest {
+public class ZuFinagleHttpTest extends BaseZooKeeperTest{
   
   static Server buildLocalServer(int port, final String respString){
     Service<HttpRequest, HttpResponse> svc = new Service<HttpRequest,HttpResponse>(){
@@ -84,9 +83,7 @@ public class ZuFinagleHttpTest {
   
   @Test
   public void testIntegration() throws Exception{
-    int zkport = 11111;
-    File dir = new File("/tmp/zu-finagle-test");
-    NIOServerCnxn.Factory zk = Util.startZkServer(zkport, dir);
+    
    
     final Map<Integer,List<Integer>> partitionLayout = new HashMap<Integer,List<Integer>>();
     partitionLayout.put(10001, Arrays.asList(0));
@@ -96,8 +93,10 @@ public class ZuFinagleHttpTest {
     ZuFinagleHttpServiceFactory clientFactory = new ZuFinagleHttpServiceFactory(1, 1000);
     
     String clusterName = "test-finagle-cluster";
-    ZuCluster cluster = 
-        new ZuCluster(new InetSocketAddress("localhost",zkport), clusterName);
+    
+    ZooKeeperClient zkClient = createZkClient();
+    
+    ZuCluster cluster = new ZuCluster(zkClient, clusterName);
     
     final ZuFinalgeServiceRegistry svcRegistry = ZuFinalgeServiceRegistry.getInstance(clusterName);
     
@@ -169,8 +168,6 @@ public class ZuFinagleHttpTest {
       cluster.leave(e1);
       cluster.leave(e2);
       cluster.leave(e3);
-      zk.shutdown();
-      Util.rmDir(dir);
     }
   }
 }

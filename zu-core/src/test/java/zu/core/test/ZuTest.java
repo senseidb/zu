@@ -1,6 +1,5 @@
 package zu.core.test;
 
-import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,29 +13,22 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import junit.framework.TestCase;
 
-import org.apache.zookeeper.server.NIOServerCnxn;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import zu.core.cluster.ZuCluster;
 import zu.core.cluster.ZuClusterEventListener;
-import zu.core.cluster.util.Util;
 
 import com.twitter.common.zookeeper.ServerSet.EndpointStatus;
+import com.twitter.common.zookeeper.ZooKeeperClient;
+import com.twitter.common.zookeeper.testing.BaseZooKeeperTest;
 
 
-public class ZuTest {
-  
-  static int zkport = 21818;
-
-  static NIOServerCnxn.Factory standaloneServerFactory;
-  static File dir = new File("/tmp/zu-core-test");
-  
+public class ZuTest extends BaseZooKeeperTest{
   
   @BeforeClass
   public static void init() throws Exception{
-    standaloneServerFactory = Util.startZkServer(zkport, dir);
+    
   }
   
   static void validate(Map<Integer,Set<Integer>> expected, Map<Integer,ArrayList<InetSocketAddress>> view){
@@ -56,7 +48,8 @@ public class ZuTest {
   
   @Test
   public void testBasic() throws Exception{
-    ZuCluster mockCluster = new ZuCluster(new InetSocketAddress(zkport), "/core/test1");
+    ZooKeeperClient zkClient = createZkClient();
+    ZuCluster mockCluster = new ZuCluster(zkClient, "/core/test1");
     
     InetSocketAddress s1 = new InetSocketAddress(1);
     
@@ -99,7 +92,9 @@ public class ZuTest {
   
   @Test
   public void testAllNodesJoined() throws Exception{
-    ZuCluster mockCluster = new ZuCluster(new InetSocketAddress(zkport), "/core/test2");
+    
+    ZooKeeperClient zkClient = createZkClient();
+    ZuCluster mockCluster = new ZuCluster(zkClient, "/core/test2");
     
     InetSocketAddress s1 = new InetSocketAddress(1);
     InetSocketAddress s2 = new InetSocketAddress(2);
@@ -143,12 +138,4 @@ public class ZuTest {
     mockCluster.leave(e2);
     mockCluster.leave(e3);
   }
-  
-  
-  @AfterClass
-  public static void tearDown(){
-    standaloneServerFactory.shutdown();
-    Util.rmDir(dir);
-  }
-
 }

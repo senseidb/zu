@@ -51,19 +51,21 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
     this(zookeeperAddr, clusterName, DEFAULT_TIMEOUT);
   }
   
-  public ZuCluster(InetSocketAddress zookeeperAddr, String clusterName,
-      int timeout) throws MonitorException{
-    assert zookeeperAddr != null;
+  public ZuCluster(ZooKeeperClient zkClient, String clusterName) throws MonitorException{
+    assert zkClient != null;
     assert clusterName != null;
     lsnrs = Collections.synchronizedList(new LinkedList<ZuClusterEventListener>());
-    ZooKeeperClient zclient = new ZooKeeperClient(Amount.of(timeout,
-        Time.SECONDS), Credentials.NONE, zookeeperAddr);
     
     if (!clusterName.startsWith("/")){
       clusterName = "/" + clusterName;
     }
-    serverSet = new ServerSetImpl(zclient, clusterName);
+    serverSet = new ServerSetImpl(zkClient, clusterName);
     serverSet.monitor(this);
+  }
+  
+  public ZuCluster(InetSocketAddress zookeeperAddr, String clusterName,
+      int timeout) throws MonitorException{
+    this(new ZooKeeperClient(Amount.of(timeout, Time.SECONDS), Credentials.NONE, zookeeperAddr), clusterName);
   }
   
   public void addClusterEventListener(ZuClusterEventListener lsnr){

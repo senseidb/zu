@@ -58,6 +58,12 @@
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 		<dependency>
+			<groupId>com.twitter.common</groupId>
+			<artifactId>zookeeper-testing</artifactId>
+			<version>0.0.30</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<groupId>com.twitter</groupId>
 			<artifactId>finagle-core</artifactId>
 			<version>6.1.1</version>
