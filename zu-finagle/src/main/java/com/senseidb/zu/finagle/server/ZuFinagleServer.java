@@ -19,8 +19,7 @@ public class ZuFinagleServer implements ZuThriftService.ServiceIface{
   public interface RequestHandler<Req, Res> {
     String getName();
     Res handleRequest(Req req);
-    ZuSerializer<Req> getRequestSerializer();
-    ZuSerializer<Res> getResponseSerializer(); 
+    ZuSerializer<Req, Res> getSerializer(); 
   }
 
   private final int port;
@@ -54,9 +53,10 @@ public class ZuFinagleServer implements ZuThriftService.ServiceIface{
       return Future.exception(new IllegalArgumentException("handler "+name+" is not registered"));
     }
     try {
-      Object reqObj =handler.getRequestSerializer().deserialize(req.data);
+      ZuSerializer serializer = handler.getSerializer();
+      Object reqObj = serializer.deserializeRequest(req.data);
       Object res = handler.handleRequest(reqObj);
-      ByteBuffer bytes = handler.getResponseSerializer().serialize(res);
+      ByteBuffer bytes = serializer.serializeResponse(res);
     
       ZuTransport resp = new ZuTransport();
       resp.data = bytes;
