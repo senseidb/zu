@@ -201,8 +201,7 @@ public class ZuFinagleTest extends BaseZooKeeperTest{
     
     try {
       ZuClientFinagleServiceBuilder<Integer, HashSet<Integer>> builder = new ZuClientFinagleServiceBuilder<Integer, HashSet<Integer>>();
-      Service<Integer, HashSet<Integer>> svc = builder.name(TestClusterHandler.SVC).serializer(TestClusterHandler.serializer).scatterGather(scatterGather)
-          .routingAlgorithm(routingAlgorithm).build();
+      Service<Integer, HashSet<Integer>> svc = builder.scatterGather(scatterGather).routingAlgorithm(routingAlgorithm).build();
       
       Future<HashSet<Integer>> future = svc.apply(1);
       HashSet<Integer> merged = future.apply();

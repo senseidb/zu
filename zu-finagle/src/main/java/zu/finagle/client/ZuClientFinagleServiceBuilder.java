@@ -83,11 +83,10 @@ public final class ZuClientFinagleServiceBuilder<Req, Res>{
   }
   
   public Service<Req, Res> build(){
-    if (name == null || serializer == null) {
-      throw new IllegalArgumentException("both name and serializer must be supplied");
-    }
-    
     if (host != null) {
+      if (name == null || serializer == null) {
+        throw new IllegalArgumentException("both name and serializer must be supplied");
+      }
       ZuFinagleServiceDecorator<Req, Res> decorator = new ZuFinagleServiceDecorator<Req, Res>(name, serializer, timeout, numThreads);
       return decorator.decorate(host);
     }
