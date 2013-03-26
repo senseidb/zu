@@ -8,7 +8,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import zu.core.cluster.routing.RoutingAlgorithm;
-import zu.finagle.serialize.ZuSerializer;
 
 import com.twitter.finagle.Service;
 import com.twitter.util.Duration;
@@ -23,8 +22,7 @@ public final class ZuClientFinagleServiceBuilder<Req, Res>{
   
   private Duration timeout = DEFAULT_TIMEOUT_DURATION;
   private InetSocketAddress host = null;
-  private String name = null;
-  private ZuSerializer<Req, Res> serializer = null;
+  private ZuClientProxy<Req, Res> clientProxy = null;
   private ZuScatterGatherer<Req,Res> scatterGather = null;
   private Set<Integer> shards = null;
   private byte[] routingKey = null;
@@ -32,8 +30,8 @@ public final class ZuClientFinagleServiceBuilder<Req, Res>{
   private int numThreads = DEFAULT_NUM_THREADS;
   private RoutingAlgorithm<Service<Req, Res>> routingAlgorithm = null;
   
-  public ZuClientFinagleServiceBuilder<Req, Res> name(String name) {
-    this.name = name;
+  public ZuClientFinagleServiceBuilder<Req, Res> clientProxy(ZuClientProxy<Req, Res> clientProxy) {
+    this.clientProxy = clientProxy;
     return this;
   }
   
@@ -45,11 +43,6 @@ public final class ZuClientFinagleServiceBuilder<Req, Res>{
   public ZuClientFinagleServiceBuilder<Req, Res> routingAlgorithm(RoutingAlgorithm<Service<Req, Res>> routingAlgorithm) {
    this.routingAlgorithm = routingAlgorithm;
    return this;
-  }
-  
-  public ZuClientFinagleServiceBuilder<Req, Res> serializer(ZuSerializer<Req, Res> serializer) {
-    this.serializer = serializer;
-    return this;
   }
   
   public ZuClientFinagleServiceBuilder<Req, Res> numThreads(int numThreads) {
@@ -84,10 +77,10 @@ public final class ZuClientFinagleServiceBuilder<Req, Res>{
   
   public Service<Req, Res> build(){
     if (host != null) {
-      if (name == null || serializer == null) {
-        throw new IllegalArgumentException("both name and serializer must be supplied");
+      if (clientProxy == null) {
+        throw new IllegalArgumentException("client proxy must be supplied");
       }
-      ZuFinagleServiceDecorator<Req, Res> decorator = new ZuFinagleServiceDecorator<Req, Res>(name, serializer, timeout, numThreads);
+      ZuFinagleServiceDecorator<Req, Res> decorator = new ZuFinagleServiceDecorator<Req, Res>(clientProxy, timeout, numThreads);
       return decorator.decorate(host);
     }
     
