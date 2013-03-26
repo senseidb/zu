@@ -1,17 +1,25 @@
-package com.senseidb.zu.finagle.server;
+package zu.finagle.server;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.thrift.protocol.TBinaryProtocol;
 
-import com.senseidb.zu.finagle.rpc.ZuThriftService;
-import com.senseidb.zu.finagle.rpc.ZuTransport;
-import com.senseidb.zu.finagle.serialize.ZuSerializer;
+import zu.core.cluster.ZuCluster;
+import zu.finagle.rpc.ZuTransport;
+import zu.finagle.rpc.ZuThriftService;
+import zu.finagle.serialize.ZuSerializer;
+
+import com.twitter.common.zookeeper.Group.JoinException;
+import com.twitter.common.zookeeper.ServerSet.EndpointStatus;
+import com.twitter.common.zookeeper.ServerSet.UpdateException;
+import com.twitter.finagle.builder.Server;
 import com.twitter.finagle.builder.ServerBuilder;
 import com.twitter.finagle.thrift.ThriftServerFramedCodec;
+import com.twitter.util.Duration;
 import com.twitter.util.Future;
 
 public class ZuFinagleServer implements ZuThriftService.ServiceIface{
@@ -22,14 +30,16 @@ public class ZuFinagleServer implements ZuThriftService.ServiceIface{
     ZuSerializer<Req, Res> getSerializer(); 
   }
 
-  private final int port;
+  private final InetSocketAddress addr;
   private final String name;
   private final Map<String,RequestHandler<?,?>> reqHandlerMap;
+  private Server server;
   
   public ZuFinagleServer(String name, int port) {
-    this.port = port;
+    this.addr = new InetSocketAddress(port);
     this.name = name;
     this.reqHandlerMap = new HashMap<String, RequestHandler<?,?>>();
+    this.server = null;
   }
   
   public <Req, Res> void registerHandler(RequestHandler<Req, Res> reqHandler) {
@@ -37,11 +47,27 @@ public class ZuFinagleServer implements ZuThriftService.ServiceIface{
   }
   
   public void start() {
-    ServerBuilder.safeBuild(new ZuThriftService.Service(this, new TBinaryProtocol.Factory()),
+    server = ServerBuilder.safeBuild(new ZuThriftService.Service(this, new TBinaryProtocol.Factory()),
         ServerBuilder.get()
         .codec(ThriftServerFramedCodec.get())
         .name(name)
-        .bindTo(new InetSocketAddress(port)));
+        .bindTo(addr));
+  }
+  
+  public void shutdown(Duration timeout){
+    if (server != null) {
+      Future<?> future = server.close();
+      if (timeout != null) {
+        future.apply(timeout);
+      }
+      else {
+        future.apply();
+      }
+    }
+  }
+  
+  public void shutdown(){
+    shutdown(null);
   }
 
   @Override
@@ -59,11 +85,33 @@ public class ZuFinagleServer implements ZuThriftService.ServiceIface{
       ByteBuffer bytes = serializer.serializeResponse(res);
     
       ZuTransport resp = new ZuTransport();
-      resp.data = bytes;
+      resp.setName(name);
+      resp.setData(bytes);
       return Future.value(resp);
     }
     catch(Throwable th) {
       return Future.exception(th);
+    }
+  }
+  
+  private Map<String, List<EndpointStatus>> endpointMap = new HashMap<String, List<EndpointStatus>>();
+  
+  public synchronized void joinCluster(ZuCluster cluster, List<Integer> shards) throws JoinException, InterruptedException {
+    String clusterName = cluster.getClusterName();
+    List<EndpointStatus> endpoints = endpointMap.get(clusterName);
+    if (endpoints == null) {
+      endpoints = cluster.join(addr, shards);
+      endpointMap.put(clusterName, endpoints);
+    }
+    else {
+      throw new JoinException("cluster "+clusterName+" already joined, leave first", null);
+    }
+  }
+  
+  public void leaveCluster(ZuCluster cluster) throws UpdateException{
+    List<EndpointStatus> endpoints = endpointMap.remove(cluster.getClusterName());
+    if (endpoints != null) {
+      cluster.leave(endpoints);
     }
   }
   

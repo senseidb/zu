@@ -5,7 +5,7 @@ import java.net.InetSocketAddress;
 
 import com.twitter.finagle.Service;
 
-public abstract class ZuFinagleServiceFactory<Req,Res>{
+public abstract class ZuFinagleServiceFactory{
 
   protected final int numThreads;
   protected final long timeout;
@@ -15,5 +15,5 @@ public abstract class ZuFinagleServiceFactory<Req,Res>{
     this.timeout = timeout;
   }
   
-  public abstract Service<Req,Res> buildFinagleService(InetSocketAddress addr);
+  public abstract <Req,Res> Service<Req,Res> buildFinagleService(InetSocketAddress addr);
 }

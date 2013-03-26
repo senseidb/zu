@@ -26,10 +26,18 @@ import com.twitter.common.zookeeper.ZooKeeperClient.Credentials;
 import com.twitter.thrift.Endpoint;
 import com.twitter.thrift.ServiceInstance;
 
+/**
+ * A cluster abstraction.
+ */
 public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
-  private static final int DEFAULT_TIMEOUT = 300;
+  /**
+   * Default zookeeper timeout: 5 minutes.
+   */
+  public static final int DEFAULT_TIMEOUT = 300;
   private final ServerSet serverSet;
+  private final ZooKeeperClient zkClient;
   private final List<ZuClusterEventListener> lsnrs;
+  private final String clusterName;
   
   private static class NodeClusterView{
     Map<Endpoint,InetSocketAddress> nodesMap = new HashMap<Endpoint,InetSocketAddress>();
@@ -38,19 +46,53 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
   
   private AtomicReference<NodeClusterView> clusterView = new AtomicReference<NodeClusterView>(new NodeClusterView());
 
+  /**
+   * @param host zookeeper host
+   * @param port zookeeper port
+   * @param clusterName name of the cluster
+   * @throws MonitorException
+   */
   public ZuCluster(String host, int port, String clusterName) throws MonitorException {
     this(new InetSocketAddress(host,port), clusterName, DEFAULT_TIMEOUT);
   }
   
+  /**
+   * @param host zookeeper host
+   * @param port zookeeper port
+   * @param clusterName name of the cluster
+   * @param timeout zookeeper timeout in seconds
+   * @throws MonitorException
+   */
   public ZuCluster(String host, int port, String clusterName,
       int timeout) throws MonitorException {
     this(new InetSocketAddress(host,port), clusterName, timeout);
   }
   
+  /**
+   * @param zookeeperAddr zookeeper address
+   * @param clusterName name of the cluster
+   * @throws MonitorException
+   */
   public ZuCluster(InetSocketAddress zookeeperAddr, String clusterName) throws MonitorException{
     this(zookeeperAddr, clusterName, DEFAULT_TIMEOUT);
   }
   
+  /**
+   * @param zookeeperAddr zookeeper address
+   * @param clusterName name of the cluster
+   * @param timeout zookeeper timeout in seconds
+   * @throws MonitorException
+   */
+  public ZuCluster(InetSocketAddress zookeeperAddr, String clusterName,
+      int timeout) throws MonitorException{
+    this(new ZooKeeperClient(Amount.of(timeout, Time.SECONDS), Credentials.NONE, zookeeperAddr), clusterName);
+  }
+  
+  /**
+   * @param zkClient A zookeeper client
+   * @param clusterName name of the cluster
+   * @throws MonitorException
+   */
   public ZuCluster(ZooKeeperClient zkClient, String clusterName) throws MonitorException{
     assert zkClient != null;
     assert clusterName != null;
@@ -59,19 +101,33 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
     if (!clusterName.startsWith("/")){
       clusterName = "/" + clusterName;
     }
+    
+    this.clusterName = clusterName;
+    this.zkClient = zkClient;
     serverSet = new ServerSetImpl(zkClient, clusterName);
     serverSet.monitor(this);
   }
   
-  public ZuCluster(InetSocketAddress zookeeperAddr, String clusterName,
-      int timeout) throws MonitorException{
-    this(new ZooKeeperClient(Amount.of(timeout, Time.SECONDS), Credentials.NONE, zookeeperAddr), clusterName);
+  public String getClusterName() {
+    return clusterName;
   }
   
+  /**
+   * Adds a listener for cluster events
+   * @param lsnr cluster listener
+   */
   public void addClusterEventListener(ZuClusterEventListener lsnr){
     lsnrs.add(lsnr);
   }
 
+  /**
+   * joins the cluster
+   * @param addr node address
+   * @param shards list of paritions ids this node supports
+   * @return a list of handles, one for each partition
+   * @throws JoinException
+   * @throws InterruptedException
+   */
   public List<EndpointStatus> join(InetSocketAddress addr, List<Integer> shards) throws JoinException, InterruptedException {
     ArrayList<EndpointStatus> statuses = new ArrayList<EndpointStatus>(shards.size());
     for (Integer shard : shards){
@@ -103,6 +159,11 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
     return statuses;
   }
   
+  /**
+   * leaves the cluster
+   * @param statuses list of handles from joining the cluster
+   * @throws UpdateException
+   */
   public void leave(List<EndpointStatus> statuses) throws UpdateException{
     UpdateException ex = null;
     for (EndpointStatus status : statuses){
@@ -158,6 +219,15 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
     
     for (ZuClusterEventListener lsnr : lsnrs){
      lsnr.clusterChanged(newView.partMap); 
+    }
+  }
+  
+  /**
+   * shuts down the cluster and closes connection to zookeeper
+   */
+  public void shutdown() {
+    if (zkClient != null) {
+      zkClient.close();
     }
   }
 

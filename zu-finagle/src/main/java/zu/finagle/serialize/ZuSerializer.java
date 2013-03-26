@@ -1,4 +1,4 @@
-package com.senseidb.zu.finagle.serialize;
+package zu.finagle.serialize;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

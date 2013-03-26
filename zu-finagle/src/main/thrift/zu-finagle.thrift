@@ -1,4 +1,4 @@
-namespace java com.senseidb.zu.finagle.rpc
+namespace java zu.finagle.rpc
 
 struct ZuTransport{
   1: required string name
