@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import junit.framework.TestCase;
@@ -66,19 +67,17 @@ public class ZuTest extends BaseZooKeeperTest{
     answer.put(0, new HashSet<Integer>(Arrays.asList(1)));
     answer.put(1, new HashSet<Integer>(Arrays.asList(1)));
     
-    
-    
-    final AtomicBoolean flag = new AtomicBoolean(false);
+    final CountDownLatch latch = new CountDownLatch(2);
     
     mockCluster.addClusterEventListener(new ZuClusterEventListener() {
       
       @Override
       public void clusterChanged(Map<Integer, List<InetSocketAddress>> clusterView) {
         int numPartsJoined = clusterView.size();
-        System.out.println("num part joined: "+numPartsJoined);
         if (numPartsJoined == 2){
           validate(answer,clusterView);
-          flag.set(true);
+          latch.countDown();
+          latch.countDown();
         }
       }
     });
@@ -86,9 +85,7 @@ public class ZuTest extends BaseZooKeeperTest{
    
     List<EndpointStatus> e1 = mockCluster.join(s1, CLUSTER_VIEW.get(s1.getPort()));
     
-    while(!flag.get()){
-      Thread.sleep(10);
-    }
+    latch.await();
     
     mockCluster.leave(e1);
   }

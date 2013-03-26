@@ -77,6 +77,7 @@ public class ConsistentHashRoutingAlgorithm<T> extends RoutingAlgorithm<T> {
 
   @Override
   public T route(byte[] key, int partition) {
+    if (circleMap == null) return null;
     TreeMap<Integer, T> circle = circleMap.get(partition);
     if (circle == null || circle.isEmpty()){
       return null;

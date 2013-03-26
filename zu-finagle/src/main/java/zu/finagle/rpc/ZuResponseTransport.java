@@ -3,7 +3,7 @@
  *
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  */
-package zu.finagle.test;
+package zu.finagle.rpc;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -28,16 +28,16 @@ import org.apache.thrift.protocol.*;
 
 // No additional import required for struct/union.
 
-public class TestResp implements TBase<TestResp, TestResp._Fields>, java.io.Serializable, Cloneable {
-  private static final TStruct STRUCT_DESC = new TStruct("TestResp");
+public class ZuResponseTransport implements TBase<ZuResponseTransport, ZuResponseTransport._Fields>, java.io.Serializable, Cloneable {
+  private static final TStruct STRUCT_DESC = new TStruct("ZuResponseTransport");
 
-  private static final TField LEN_FIELD_DESC = new TField("len", TType.I32, (short)1);
+  private static final TField DATA_FIELD_DESC = new TField("data", TType.STRING, (short)1);
 
-  public int len;
+  public ByteBuffer data;
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements TFieldIdEnum {
-    LEN((short)1, "len");
+    DATA((short)1, "data");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -52,8 +52,8 @@ public class TestResp implements TBase<TestResp, TestResp._Fields>, java.io.Seri
      */
     public static _Fields findByThriftId(int fieldId) {
       switch(fieldId) {
-        case 1: // LEN
-          return LEN;
+        case 1: // DATA
+          return DATA;
         default:
           return null;
       }
@@ -94,78 +94,79 @@ public class TestResp implements TBase<TestResp, TestResp._Fields>, java.io.Seri
   }
 
   // isset id assignments
-  private static final int __LEN_ISSET_ID = 0;
-  private BitSet __isset_bit_vector = new BitSet(1);
 
   public static final Map<_Fields, FieldMetaData> metaDataMap;
   static {
     Map<_Fields, FieldMetaData> tmpMap = new EnumMap<_Fields, FieldMetaData>(_Fields.class);
-    tmpMap.put(_Fields.LEN, new FieldMetaData("len", TFieldRequirementType.REQUIRED, 
-        new FieldValueMetaData(TType.I32)));
+    tmpMap.put(_Fields.DATA, new FieldMetaData("data", TFieldRequirementType.OPTIONAL, 
+        new FieldValueMetaData(TType.STRING)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
-    FieldMetaData.addStructMetaDataMap(TestResp.class, metaDataMap);
+    FieldMetaData.addStructMetaDataMap(ZuResponseTransport.class, metaDataMap);
   }
 
-  public TestResp() {
-  }
-
-  public TestResp(
-    int len)
-  {
-    this();
-    this.len = len;
-    setLenIsSet(true);
+  public ZuResponseTransport() {
   }
 
   /**
    * Performs a deep copy on <i>other</i>.
    */
-  public TestResp(TestResp other) {
-    __isset_bit_vector.clear();
-    __isset_bit_vector.or(other.__isset_bit_vector);
-    this.len = other.len;
+  public ZuResponseTransport(ZuResponseTransport other) {
+    if (other.isSetData()) {
+      this.data = TBaseHelper.copyBinary(other.data);
+;
+    }
   }
 
-  public TestResp deepCopy() {
-    return new TestResp(this);
+  public ZuResponseTransport deepCopy() {
+    return new ZuResponseTransport(this);
   }
 
   @Override
   public void clear() {
-    setLenIsSet(false);
-    this.len = 0;
+    this.data = null;
   }
 
-  public int getLen() {
-    return this.len;
+  public byte[] getData() {
+    setData(TBaseHelper.rightSize(data));
+    return data.array();
   }
 
-  public TestResp setLen(int len) {
-    this.len = len;
-    setLenIsSet(true);
+  public ByteBuffer BufferForData() {
+    return data;
+  }
+
+  public ZuResponseTransport setData(byte[] data) {
+    setData(ByteBuffer.wrap(data));
     return this;
   }
 
-  public void unsetLen() {
-    __isset_bit_vector.clear(__LEN_ISSET_ID);
+  public ZuResponseTransport setData(ByteBuffer data) {
+    this.data = data;
+    return this;
   }
 
-  /** Returns true if field len is set (has been asigned a value) and false otherwise */
-  public boolean isSetLen() {
-    return __isset_bit_vector.get(__LEN_ISSET_ID);
+  public void unsetData() {
+    this.data = null;
   }
 
-  public void setLenIsSet(boolean value) {
-    __isset_bit_vector.set(__LEN_ISSET_ID, value);
+  /** Returns true if field data is set (has been asigned a value) and false otherwise */
+  public boolean isSetData() {
+    return this.data != null;
+  }
+
+  public void setDataIsSet(boolean value) {
+    if (!value) {
+      this.data = null;
+    }
   }
 
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
-    case LEN:
+    case DATA:
       if (value == null) {
-        unsetLen();
+        unsetData();
       } else {
-        setLen((Integer)value);
+        setData((ByteBuffer)value);
       }
       break;
 
@@ -174,8 +175,8 @@ public class TestResp implements TBase<TestResp, TestResp._Fields>, java.io.Seri
 
   public Object getFieldValue(_Fields field) {
     switch (field) {
-    case LEN:
-      return new Integer(getLen());
+    case DATA:
+      return getData();
 
     }
     throw new IllegalStateException();
@@ -188,8 +189,8 @@ public class TestResp implements TBase<TestResp, TestResp._Fields>, java.io.Seri
     }
 
     switch (field) {
-    case LEN:
-      return isSetLen();
+    case DATA:
+      return isSetData();
     }
     throw new IllegalStateException();
   }
@@ -198,21 +199,21 @@ public class TestResp implements TBase<TestResp, TestResp._Fields>, java.io.Seri
   public boolean equals(Object that) {
     if (that == null)
       return false;
-    if (that instanceof TestResp)
-      return this.equals((TestResp)that);
+    if (that instanceof ZuResponseTransport)
+      return this.equals((ZuResponseTransport)that);
     return false;
   }
 
-  public boolean equals(TestResp that) {
+  public boolean equals(ZuResponseTransport that) {
     if (that == null)
       return false;
 
-    boolean this_present_len = true;
-    boolean that_present_len = true;
-    if (this_present_len || that_present_len) {
-      if (!(this_present_len && that_present_len))
+    boolean this_present_data = true && this.isSetData();
+    boolean that_present_data = true && that.isSetData();
+    if (this_present_data || that_present_data) {
+      if (!(this_present_data && that_present_data))
         return false;
-      if (this.len != that.len)
+      if (!this.data.equals(that.data))
         return false;
     }
 
@@ -224,20 +225,20 @@ public class TestResp implements TBase<TestResp, TestResp._Fields>, java.io.Seri
     return 0;
   }
 
-  public int compareTo(TestResp other) {
+  public int compareTo(ZuResponseTransport other) {
     if (!getClass().equals(other.getClass())) {
       return getClass().getName().compareTo(other.getClass().getName());
     }
 
     int lastComparison = 0;
-    TestResp typedOther = (TestResp)other;
+    ZuResponseTransport typedOther = (ZuResponseTransport)other;
 
-    lastComparison = Boolean.valueOf(isSetLen()).compareTo(typedOther.isSetLen());
+    lastComparison = Boolean.valueOf(isSetData()).compareTo(typedOther.isSetData());
     if (lastComparison != 0) {
       return lastComparison;
     }
-    if (isSetLen()) {
-      lastComparison = TBaseHelper.compareTo(this.len, typedOther.len);
+    if (isSetData()) {
+      lastComparison = TBaseHelper.compareTo(this.data, typedOther.data);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -259,10 +260,9 @@ public class TestResp implements TBase<TestResp, TestResp._Fields>, java.io.Seri
         break;
       }
       switch (field.id) {
-        case 1: // LEN
-          if (field.type == TType.I32) {
-            this.len = iprot.readI32();
-            setLenIsSet(true);
+        case 1: // DATA
+          if (field.type == TType.STRING) {
+            this.data = iprot.readBinary();
           } else { 
             TProtocolUtil.skip(iprot, field.type);
           }
@@ -275,9 +275,6 @@ public class TestResp implements TBase<TestResp, TestResp._Fields>, java.io.Seri
     iprot.readStructEnd();
 
     // check for required fields of primitive type, which can't be checked in the validate method
-    if (!isSetLen()) {
-      throw new TProtocolException("Required field 'len' was not found in serialized data! Struct: " + toString());
-    }
     validate();
   }
 
@@ -285,28 +282,37 @@ public class TestResp implements TBase<TestResp, TestResp._Fields>, java.io.Seri
     validate();
 
     oprot.writeStructBegin(STRUCT_DESC);
-    oprot.writeFieldBegin(LEN_FIELD_DESC);
-    oprot.writeI32(this.len);
-    oprot.writeFieldEnd();
+    if (this.data != null) {
+      if (isSetData()) {
+        oprot.writeFieldBegin(DATA_FIELD_DESC);
+        oprot.writeBinary(this.data);
+        oprot.writeFieldEnd();
+      }
+    }
     oprot.writeFieldStop();
     oprot.writeStructEnd();
   }
 
   @Override
   public String toString() {
-    StringBuilder sb = new StringBuilder("TestResp(");
+    StringBuilder sb = new StringBuilder("ZuResponseTransport(");
     boolean first = true;
 
-    sb.append("len:");
-    sb.append(this.len);
-    first = false;
+    if (isSetData()) {
+      sb.append("data:");
+      if (this.data == null) {
+        sb.append("null");
+      } else {
+        TBaseHelper.toString(this.data, sb);
+      }
+      first = false;
+    }
     sb.append(")");
     return sb.toString();
   }
 
   public void validate() throws TException {
     // check for required fields
-    // alas, we cannot check 'len' because it's a primitive and you chose the non-beans generator.
   }
 
 }

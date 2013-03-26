@@ -6,12 +6,15 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 
 import junit.framework.TestCase;
 
 import org.junit.Test;
 
 import zu.core.cluster.ZuCluster;
+import zu.core.cluster.ZuClusterEventListener;
 import zu.core.cluster.routing.RoutingAlgorithm;
 import zu.finagle.client.ZuClientFinagleServiceBuilder;
 import zu.finagle.client.ZuFinagleServiceDecorator;
@@ -29,33 +32,33 @@ import com.twitter.util.Future;
 public class ZuFinagleTest extends BaseZooKeeperTest{
 
   
-  private static class TestHandler implements ZuFinagleServer.RequestHandler<TestReq, TestResp>{
+  private static class TestHandler implements ZuFinagleServer.RequestHandler<Req, Resp>{
     static final String SVC = "strlen";
 
     @SuppressWarnings("rawtypes")
-    static final ZuSerializer serializer = new ThriftSerializer<TestReq, TestResp>(TestReq.class, TestResp.class);
+    static final ZuSerializer serializer = new ThriftSerializer<Req, Resp>(Req.class, Resp.class);
     @Override
     public String getName() {
       return SVC;
     }
 
     @Override
-    public TestResp handleRequest(TestReq req) {
+    public Resp handleRequest(Req req) {
       int len = (req.s == null ) ? 0 : req.s.length();
-      TestResp testResp = new TestResp();
+      Resp testResp = new Resp();
       testResp.setLen(len);
       return testResp;
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public ZuSerializer<TestReq, TestResp> getSerializer() {
+    public ZuSerializer<Req, Resp> getSerializer() {
       return serializer;
     }
     
   }
   
-  private static class TestClusterHandler extends ZuScatterGatherer<Integer, HashSet<Integer>> implements ZuFinagleServer.RequestHandler<Integer, HashSet<Integer>>{
+  private static class TestClusterHandler implements ZuFinagleServer.RequestHandler<Integer, HashSet<Integer>>{
     static final String SVC = "cluster";
 
     @SuppressWarnings("rawtypes")
@@ -74,7 +77,7 @@ public class ZuFinagleTest extends BaseZooKeeperTest{
     @Override
     public HashSet<Integer> handleRequest(Integer req) {
       if (shards.contains(req)){
-        return shards;
+        return new HashSet<Integer>(Arrays.asList(req));
       }
       return new HashSet<Integer>();
     }
@@ -84,16 +87,6 @@ public class ZuFinagleTest extends BaseZooKeeperTest{
     public ZuSerializer<Integer, HashSet<Integer>> getSerializer() {
       return serializer;
     }
-
-    @Override
-    public Future<HashSet<Integer>> merge(Map<Integer, HashSet<Integer>> results) {
-      HashSet<Integer> merged = new HashSet<Integer>();
-      for (HashSet<Integer> subResult : results.values()) {
-        merged.addAll(subResult);
-      }
-      return Future.value(merged);
-    }
-    
   }
   
   @Test
@@ -105,21 +98,21 @@ public class ZuFinagleTest extends BaseZooKeeperTest{
     server.registerHandler(new TestHandler());
     
     server.start();
-    Service<TestReq, TestResp> svc = null;
+    Service<Req, Resp> svc = null;
     try {
-      ZuClientFinagleServiceBuilder<TestReq, TestResp> builder = new ZuClientFinagleServiceBuilder<TestReq, TestResp>();
+      ZuClientFinagleServiceBuilder<Req, Resp> builder = new ZuClientFinagleServiceBuilder<Req, Resp>();
       svc = builder.name(TestHandler.SVC).serializer(TestHandler.serializer).host(new InetSocketAddress(port)).build();
       
       String s = "zu finagle test string";
-      TestReq req = new TestReq();
+      Req req = new Req();
       req.setS(s);
-      Future<TestResp> lenFuture = svc.apply(req);
+      Future<Resp> lenFuture = svc.apply(req);
       
-      TestResp resp = lenFuture.apply();
+      Resp resp = lenFuture.apply();
       
       TestCase.assertEquals(s.length(), resp.getLen());
       
-      req = new TestReq();
+      req = new Req();
       lenFuture = svc.apply(req);
       
       resp = lenFuture.apply();
@@ -147,6 +140,22 @@ public class ZuFinagleTest extends BaseZooKeeperTest{
         
     mockCluster.addClusterEventListener(routingAlgorithm);
     
+    final CountDownLatch latch = new CountDownLatch(4);
+    final Set<Integer> parts = new HashSet<Integer>();
+    
+    mockCluster.addClusterEventListener(new ZuClusterEventListener() {
+      
+      @Override
+      public void clusterChanged(Map<Integer, List<InetSocketAddress>> clusterView) {
+        for (Integer part : clusterView.keySet()) {
+          if (!parts.contains(part)) {
+            parts.add(part);
+            latch.countDown();
+          }
+        }
+      }
+    });
+    
     int port = 6101;
     ZuFinagleServer server = new ZuFinagleServer(port);
     List<Integer> shards = Arrays.asList(0,1);
@@ -168,18 +177,41 @@ public class ZuFinagleTest extends BaseZooKeeperTest{
     server.joinCluster(mockCluster, shards);
     serverList.add(server);
     
+    latch.await();
     
+    for (ZuFinagleServer s : serverList) {
+      s.start();
+    }
+    
+    ZuScatterGatherer<Integer, HashSet<Integer>> scatterGather = new ZuScatterGatherer<Integer, HashSet<Integer>>(){
+      @Override
+      public Future<HashSet<Integer>> merge(Map<Integer, HashSet<Integer>> results) {
+        HashSet<Integer> merged = new HashSet<Integer>();
+        for (HashSet<Integer> subResult : results.values()) {
+          merged.addAll(subResult);
+        }
+        return Future.value(merged);
+      }
+
+      @Override
+      public Integer rewrite(Integer req, int shard) {
+       return shard;
+      }
+    };
     
     try {
       ZuClientFinagleServiceBuilder<Integer, HashSet<Integer>> builder = new ZuClientFinagleServiceBuilder<Integer, HashSet<Integer>>();
-      Service<Integer, HashSet<Integer>> svc = builder.name(TestClusterHandler.SVC).serializer(TestClusterHandler.serializer)
+      Service<Integer, HashSet<Integer>> svc = builder.name(TestClusterHandler.SVC).serializer(TestClusterHandler.serializer).scatterGather(scatterGather)
           .routingAlgorithm(routingAlgorithm).build();
       
       Future<HashSet<Integer>> future = svc.apply(1);
       HashSet<Integer> merged = future.apply();
+      TestCase.assertEquals(new HashSet<Integer>(Arrays.asList(0,1,2,3)), merged);
     }
     finally {
-      server.shutdown();
+      for (ZuFinagleServer s : serverList) {
+        s.shutdown();
+      }
     }
   }
 }

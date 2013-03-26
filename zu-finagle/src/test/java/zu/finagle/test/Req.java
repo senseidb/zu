@@ -28,8 +28,8 @@ import org.apache.thrift.protocol.*;
 
 // No additional import required for struct/union.
 
-public class TestReq implements TBase<TestReq, TestReq._Fields>, java.io.Serializable, Cloneable {
-  private static final TStruct STRUCT_DESC = new TStruct("TestReq");
+public class Req implements TBase<Req, Req._Fields>, java.io.Serializable, Cloneable {
+  private static final TStruct STRUCT_DESC = new TStruct("Req");
 
   private static final TField S_FIELD_DESC = new TField("s", TType.STRING, (short)1);
 
@@ -101,23 +101,23 @@ public class TestReq implements TBase<TestReq, TestReq._Fields>, java.io.Seriali
     tmpMap.put(_Fields.S, new FieldMetaData("s", TFieldRequirementType.OPTIONAL, 
         new FieldValueMetaData(TType.STRING)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
-    FieldMetaData.addStructMetaDataMap(TestReq.class, metaDataMap);
+    FieldMetaData.addStructMetaDataMap(Req.class, metaDataMap);
   }
 
-  public TestReq() {
+  public Req() {
   }
 
   /**
    * Performs a deep copy on <i>other</i>.
    */
-  public TestReq(TestReq other) {
+  public Req(Req other) {
     if (other.isSetS()) {
       this.s = other.s;
     }
   }
 
-  public TestReq deepCopy() {
-    return new TestReq(this);
+  public Req deepCopy() {
+    return new Req(this);
   }
 
   @Override
@@ -129,7 +129,7 @@ public class TestReq implements TBase<TestReq, TestReq._Fields>, java.io.Seriali
     return this.s;
   }
 
-  public TestReq setS(String s) {
+  public Req setS(String s) {
     this.s = s;
     return this;
   }
@@ -188,12 +188,12 @@ public class TestReq implements TBase<TestReq, TestReq._Fields>, java.io.Seriali
   public boolean equals(Object that) {
     if (that == null)
       return false;
-    if (that instanceof TestReq)
-      return this.equals((TestReq)that);
+    if (that instanceof Req)
+      return this.equals((Req)that);
     return false;
   }
 
-  public boolean equals(TestReq that) {
+  public boolean equals(Req that) {
     if (that == null)
       return false;
 
@@ -214,13 +214,13 @@ public class TestReq implements TBase<TestReq, TestReq._Fields>, java.io.Seriali
     return 0;
   }
 
-  public int compareTo(TestReq other) {
+  public int compareTo(Req other) {
     if (!getClass().equals(other.getClass())) {
       return getClass().getName().compareTo(other.getClass().getName());
     }
 
     int lastComparison = 0;
-    TestReq typedOther = (TestReq)other;
+    Req typedOther = (Req)other;
 
     lastComparison = Boolean.valueOf(isSetS()).compareTo(typedOther.isSetS());
     if (lastComparison != 0) {
@@ -284,7 +284,7 @@ public class TestReq implements TBase<TestReq, TestReq._Fields>, java.io.Seriali
 
   @Override
   public String toString() {
-    StringBuilder sb = new StringBuilder("TestReq(");
+    StringBuilder sb = new StringBuilder("Req(");
     boolean first = true;
 
     if (isSetS()) {

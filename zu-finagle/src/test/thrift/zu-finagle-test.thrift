@@ -1,9 +1,9 @@
 namespace java zu.finagle.test
 
-struct TestReq{
+struct Req{
   1: optional string s
 }
 
-struct TestResp{
+struct Resp{
   1: required i32 len
 }

@@ -92,8 +92,8 @@ public final class ZuClientFinagleServiceBuilder<Req, Res>{
       return decorator.decorate(host);
     }
     
-    if (routingAlgorithm == null) {
-      throw new IllegalArgumentException("one of routing algorithm or cluster must be supplied");
+    if (routingAlgorithm == null || scatterGather == null) {
+      throw new IllegalArgumentException("both routing algorithm and scattergather handler must be supplied");
     }
     
     if (shards == null) {
@@ -101,7 +101,6 @@ public final class ZuClientFinagleServiceBuilder<Req, Res>{
     }
     
     return new Service<Req, Res>(){
-
       @Override
       public Future<Res> apply(Req req) {
         Map<Integer, Future<Res>> futureList = new HashMap<Integer,Future<Res>>();
