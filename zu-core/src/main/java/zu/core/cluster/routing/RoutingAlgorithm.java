@@ -6,46 +6,72 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
 import zu.core.cluster.ZuClusterEventListener;
 
-public interface RoutingAlgorithm extends ZuClusterEventListener{
-  InetSocketAddress route(byte[] key, int partition);
+public abstract class RoutingAlgorithm<T> implements ZuClusterEventListener{
+  protected volatile Map<Integer,ArrayList<T>> clusterView;
+  private final InetSocketAddressDecorator<T> socketDecorator;
   
-  public static final RoutingAlgorithm Random = new RandomAlgorithm();
-  public static final RoutingAlgorithm RoundRobin = new RoundRobinAlgorithm();
+  public RoutingAlgorithm(InetSocketAddressDecorator<T> socketDecorator) {
+    this.socketDecorator = socketDecorator;
+  }
+  
+  public abstract T route(byte[] key, int partition);
+  
+  @Override
+  public final void clusterChanged(Map<Integer, List<InetSocketAddress>> view){
+    Map<Integer, ArrayList<T>> clusterView = new HashMap<Integer, ArrayList<T>>();
+    
+    for (Entry<Integer,List<InetSocketAddress>> entry : view.entrySet()) {
+      Integer key = entry.getKey();
+      List<InetSocketAddress> value = entry.getValue();
+      ArrayList<T> list = new ArrayList<T>(value.size());
+      for (InetSocketAddress addr : value) {
+        T elem = socketDecorator.decorate(addr);
+        if (elem != null) {
+          list.add(elem);
+        }
+      }
+      clusterView.put(key, list);
+    }
+    
+    updateCluster(clusterView);
+  }
+  
+  public void updateCluster(Map<Integer,ArrayList<T>> clusterView){
+    this.clusterView = clusterView;
+  }
 
-  public static class RandomAlgorithm implements RoutingAlgorithm {
+  public static class RandomAlgorithm<T> extends RoutingAlgorithm<T> {
     private Random rand = new Random();
-    private volatile Map<Integer,ArrayList<InetSocketAddress>> clusterView;
+    
+    
+    public RandomAlgorithm(InetSocketAddressDecorator<T> socketDecorator){
+      super(socketDecorator);
+    }
     
     @Override
-    public InetSocketAddress route(byte[] key, int partition) {
-      List<InetSocketAddress> nodes = clusterView.get(partition);
+    public T route(byte[] key, int partition) {
+      ArrayList<T> nodes = clusterView.get(partition);
       if (nodes.isEmpty()) return null;
       return nodes.get(rand.nextInt(nodes.size()));
     }
-
-    @Override
-    public void clusterChanged(
-        Map<Integer, ArrayList<InetSocketAddress>> clusterView) {
-      this.clusterView = clusterView;
-    }
-
-    @Override
-    public void nodesRemovedFromCluster(List<InetSocketAddress> nodes) {
-      
-    }
   }
   
-  public static class RoundRobinAlgorithm implements RoutingAlgorithm {
+  public static class RoundRobinAlgorithm<T> extends RoutingAlgorithm<T> {
     private final Map<Integer,AtomicLong> countMap = Collections.synchronizedMap(new HashMap<Integer,AtomicLong>());
-    private volatile Map<Integer,ArrayList<InetSocketAddress>> clusterView;
+    
+    public RoundRobinAlgorithm(InetSocketAddressDecorator<T> socketDecorator){
+      super(socketDecorator);
+    }
+    
     @Override
-    public InetSocketAddress route(byte[] key, int partition) {
-      ArrayList<InetSocketAddress> nodes = clusterView.get(partition);
+    public T route(byte[] key, int partition) {
+      ArrayList<T> nodes = clusterView.get(partition);
       if (nodes.isEmpty()) return null;
       AtomicLong idx = countMap.get(partition);
       long idxVal = 0;
@@ -57,16 +83,6 @@ public interface RoutingAlgorithm extends ZuClusterEventListener{
         idxVal = idx.incrementAndGet();
       }
       return nodes.get((int)(idxVal % (long)nodes.size()));
-    }
-    
-    @Override
-    public void clusterChanged(
-        Map<Integer, ArrayList<InetSocketAddress>> clusterView) {
-      this.clusterView = clusterView;
-    }
-    @Override
-    public void nodesRemovedFromCluster(List<InetSocketAddress> nodes) {
-      
     }
   }
 }

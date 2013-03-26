@@ -41,7 +41,7 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
   
   private static class NodeClusterView{
     Map<Endpoint,InetSocketAddress> nodesMap = new HashMap<Endpoint,InetSocketAddress>();
-    Map<Integer,ArrayList<InetSocketAddress>> partMap = new HashMap<Integer,ArrayList<InetSocketAddress>>();
+    Map<Integer,List<InetSocketAddress>> partMap = new HashMap<Integer,List<InetSocketAddress>>();
   }
   
   private AtomicReference<NodeClusterView> clusterView = new AtomicReference<NodeClusterView>(new NodeClusterView());
@@ -198,7 +198,7 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
       }
       newView.nodesMap.put(ep, svc);
       int shardId = si.getShard();
-      ArrayList<InetSocketAddress> nodeList = newView.partMap.get(shardId);
+      List<InetSocketAddress> nodeList = newView.partMap.get(shardId);
       if (nodeList == null){
         nodeList = new ArrayList<InetSocketAddress>();
         newView.partMap.put(shardId, nodeList);

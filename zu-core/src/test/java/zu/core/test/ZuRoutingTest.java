@@ -16,24 +16,34 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import zu.core.cluster.routing.ConsistentHashRoutingAlgorithm;
+import zu.core.cluster.routing.InetSocketAddressDecorator;
 import zu.core.cluster.routing.RoutingAlgorithm;
 
 public class ZuRoutingTest {
 
   private static ArrayList<InetSocketAddress> NodeList = new ArrayList<InetSocketAddress>();
-  private static Map<Integer,ArrayList<InetSocketAddress>> ClusterView;
+  private static Map<Integer,List<InetSocketAddress>> ClusterView;
+  
+  static InetSocketAddressDecorator<InetSocketAddress> defaultDecorator = new InetSocketAddressDecorator<InetSocketAddress>() {
+
+    @Override
+    public InetSocketAddress decorate(InetSocketAddress addr) {
+      return addr;
+    }
+    
+  };
   @BeforeClass
   public static void init(){
     NodeList.add(new InetSocketAddress(1));
     NodeList.add(new InetSocketAddress(2));
     NodeList.add(new InetSocketAddress(3));
-    ClusterView = new HashMap<Integer,ArrayList<InetSocketAddress>>();
+    ClusterView = new HashMap<Integer,List<InetSocketAddress>>();
     ClusterView.put(1, NodeList);
   }
   
   @Test
   public void testRandomRouting(){
-    RoutingAlgorithm alg = RoutingAlgorithm.Random;
+    RoutingAlgorithm<InetSocketAddress> alg = new RoutingAlgorithm.RandomAlgorithm<InetSocketAddress>(defaultDecorator);
     alg.clusterChanged(ClusterView);
     Map<Integer,AtomicInteger> ids = new HashMap<Integer,AtomicInteger>();
     int numIter = 50;
@@ -62,7 +72,7 @@ public class ZuRoutingTest {
   
   @Test
   public void testRoundRobinRouting(){
-    RoutingAlgorithm alg = RoutingAlgorithm.RoundRobin;
+    RoutingAlgorithm<InetSocketAddress> alg = new RoutingAlgorithm.RoundRobinAlgorithm<InetSocketAddress>(defaultDecorator);
     alg.clusterChanged(ClusterView);
     int numIter = 10;
 
@@ -80,7 +90,7 @@ public class ZuRoutingTest {
   
   @Test
   public void testConsistentHash(){
-    RoutingAlgorithm alg = new ConsistentHashRoutingAlgorithm();
+    RoutingAlgorithm<InetSocketAddress> alg = new ConsistentHashRoutingAlgorithm<InetSocketAddress>(defaultDecorator);
     alg.clusterChanged(ClusterView);
     int numIter = 50;
     String key = "test";

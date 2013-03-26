@@ -1,4 +1,4 @@
-package zu.finagle;
+package zu.finagle.client;
 
 import java.net.InetSocketAddress;
 

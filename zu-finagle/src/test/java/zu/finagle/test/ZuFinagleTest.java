@@ -4,12 +4,13 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import junit.framework.TestCase;
 
 import org.junit.Test;
 
-import zu.finagle.ZuClientFinagleServiceFactory;
+import zu.finagle.client.ZuClientFinagleServiceFactory;
 import zu.finagle.serialize.JOSSSerializer;
 import zu.finagle.serialize.ThriftSerializer;
 import zu.finagle.serialize.ZuSerializer;
@@ -17,6 +18,7 @@ import zu.finagle.server.ZuFinagleServer;
 
 import com.twitter.common.zookeeper.testing.BaseZooKeeperTest;
 import com.twitter.finagle.Service;
+import com.twitter.util.Duration;
 import com.twitter.util.Future;
 
 public class ZuFinagleTest extends BaseZooKeeperTest{
@@ -91,9 +93,10 @@ public class ZuFinagleTest extends BaseZooKeeperTest{
     server.start();
     
     try {
-      ZuClientFinagleServiceFactory clientFactory = new ZuClientFinagleServiceFactory(new InetSocketAddress(port), 1000, 5);
+      ZuClientFinagleServiceFactory clientFactory = new ZuClientFinagleServiceFactory();
       clientFactory.registerSerializer(TestHandler.SVC, TestHandler.serializer);
-      Service<TestReq, TestResp> svc = clientFactory.getService(TestHandler.SVC);
+      Service<TestReq, TestResp> svc = clientFactory.getService(TestHandler.SVC,new InetSocketAddress(port), 
+          Duration.apply(1000, TimeUnit.MILLISECONDS), 5);
       
       String s = "zu finagle test string";
       TestReq req = new TestReq();

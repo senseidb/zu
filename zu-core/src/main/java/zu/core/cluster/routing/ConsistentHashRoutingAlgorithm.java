@@ -1,11 +1,9 @@
 package zu.core.cluster.routing;
 
-import java.net.InetSocketAddress;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
@@ -15,7 +13,7 @@ import java.util.TreeMap;
  * Consistent hash routing implementation based on:
  * http://weblogs.java.net/blog/tomwhite/archive/2007/11/consistent_hash.html
  */
-public class ConsistentHashRoutingAlgorithm implements RoutingAlgorithm {
+public class ConsistentHashRoutingAlgorithm<T> extends RoutingAlgorithm<T> {
 
   private static class MD5HashProvider{
     
@@ -44,28 +42,29 @@ public class ConsistentHashRoutingAlgorithm implements RoutingAlgorithm {
   
   final private MD5HashProvider hashProvider = new MD5HashProvider();
   final private int numberOfReplicas;
-  private volatile Map<Integer,TreeMap<Integer, InetSocketAddress>> circleMap = new HashMap<Integer,TreeMap<Integer, InetSocketAddress>>();
+  private volatile Map<Integer,TreeMap<Integer, T>> circleMap = new HashMap<Integer,TreeMap<Integer, T>>();
   
   public static final int DEFAULT_NUM_REPLICA = 50;
   
-  public ConsistentHashRoutingAlgorithm(int numberOfReplicas){
+  public ConsistentHashRoutingAlgorithm(int numberOfReplicas, InetSocketAddressDecorator<T> socketDecorator){
+    super(socketDecorator);
     this.numberOfReplicas = numberOfReplicas;
   }
   
-  public ConsistentHashRoutingAlgorithm(){
-    this(DEFAULT_NUM_REPLICA);
+  public ConsistentHashRoutingAlgorithm(InetSocketAddressDecorator<T> socketDecorator){
+    this(DEFAULT_NUM_REPLICA, socketDecorator);
   }
 
   @Override
-  public void clusterChanged(
-      Map<Integer, ArrayList<InetSocketAddress>> clusterView) {
-    Map<Integer,TreeMap<Integer, InetSocketAddress>> tmpMap = new HashMap<Integer,TreeMap<Integer, InetSocketAddress>>();
+  public void updateCluster(
+      Map<Integer, ArrayList<T>> clusterView) {
+    Map<Integer,TreeMap<Integer, T>> tmpMap = new HashMap<Integer,TreeMap<Integer, T>>();
     
-    for (Entry<Integer,ArrayList<InetSocketAddress>> entry : clusterView.entrySet()){
+    for (Entry<Integer,ArrayList<T>> entry : clusterView.entrySet()){
       Integer partition = entry.getKey();
-      TreeMap<Integer, InetSocketAddress> circle = new TreeMap<Integer, InetSocketAddress>();
+      TreeMap<Integer, T> circle = new TreeMap<Integer, T>();
       tmpMap.put(partition, circle);
-      for (InetSocketAddress newNode : entry.getValue()){
+      for (T newNode : entry.getValue()){
         for (int count = 0; count < numberOfReplicas; ++count){
           String key = newNode.toString() + count;
           circle.put((int)hashProvider.hash(key.getBytes()), newNode);
@@ -75,20 +74,16 @@ public class ConsistentHashRoutingAlgorithm implements RoutingAlgorithm {
     circleMap = tmpMap;
   }
 
-  @Override
-  public void nodesRemovedFromCluster(List<InetSocketAddress> nodes) {
-    
-  }
 
   @Override
-  public InetSocketAddress route(byte[] key, int partition) {
-    TreeMap<Integer, InetSocketAddress> circle = circleMap.get(partition);
+  public T route(byte[] key, int partition) {
+    TreeMap<Integer, T> circle = circleMap.get(partition);
     if (circle == null || circle.isEmpty()){
       return null;
     }
     int hash = (int)hashProvider.hash(key);
     if (!circle.containsKey(hash)) {
-      SortedMap<Integer, InetSocketAddress> tailMap = circle.tailMap(hash);
+      SortedMap<Integer, T> tailMap = circle.tailMap(hash);
       hash = tailMap.isEmpty() ? circle.firstKey() : tailMap.firstKey();
     }
     return circle.get(hash);

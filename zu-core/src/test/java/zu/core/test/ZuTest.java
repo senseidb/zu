@@ -1,7 +1,6 @@
 package zu.core.test;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,15 +25,24 @@ import com.twitter.common.zookeeper.testing.BaseZooKeeperTest;
 
 public class ZuTest extends BaseZooKeeperTest{
   
+  private static final Map<Integer,List<Integer>> CLUSTER_VIEW;
+  
+  static{
+    CLUSTER_VIEW = new HashMap<Integer,List<Integer>>();
+    CLUSTER_VIEW.put(1, Arrays.asList(0,1));
+    CLUSTER_VIEW.put(2, Arrays.asList(1,2));
+    CLUSTER_VIEW.put(3, Arrays.asList(2,3));
+  }
+  
   @BeforeClass
   public static void init() throws Exception{
     
   }
   
-  static void validate(Map<Integer,Set<Integer>> expected, Map<Integer,ArrayList<InetSocketAddress>> view){
-    for (Entry<Integer,ArrayList<InetSocketAddress>> entry : view.entrySet()){
+  static void validate(Map<Integer,Set<Integer>> expected, Map<Integer,List<InetSocketAddress>> view){
+    for (Entry<Integer,List<InetSocketAddress>> entry : view.entrySet()){
       Integer key = entry.getKey();
-      ArrayList<InetSocketAddress> list = entry.getValue();
+      List<InetSocketAddress> list = entry.getValue();
       HashSet<Integer> ports = new HashSet<Integer>();
       for (InetSocketAddress svc : list){
         ports.add(svc.getPort());
@@ -65,7 +73,7 @@ public class ZuTest extends BaseZooKeeperTest{
     mockCluster.addClusterEventListener(new ZuClusterEventListener() {
       
       @Override
-      public void clusterChanged(Map<Integer, ArrayList<InetSocketAddress>> clusterView) {
+      public void clusterChanged(Map<Integer, List<InetSocketAddress>> clusterView) {
         int numPartsJoined = clusterView.size();
         System.out.println("num part joined: "+numPartsJoined);
         if (numPartsJoined == 2){
@@ -73,15 +81,10 @@ public class ZuTest extends BaseZooKeeperTest{
           flag.set(true);
         }
       }
-
-      @Override
-      public void nodesRemovedFromCluster(List<InetSocketAddress> nodes) {
-        
-      }
     });
 
    
-    List<EndpointStatus> e1 = mockCluster.join(s1, ZuTestUtil.CLUSTER_VIEW.get(s1.getPort()));
+    List<EndpointStatus> e1 = mockCluster.join(s1, CLUSTER_VIEW.get(s1.getPort()));
     
     while(!flag.get()){
       Thread.sleep(10);
@@ -111,24 +114,19 @@ public class ZuTest extends BaseZooKeeperTest{
     
     mockCluster.addClusterEventListener(new ZuClusterEventListener() {  
       @Override
-      public void clusterChanged(Map<Integer, ArrayList<InetSocketAddress>> clusterView) {
+      public void clusterChanged(Map<Integer, List<InetSocketAddress>> clusterView) {
         int numPartsJoined = clusterView.size();
         if (numPartsJoined == 4){
           validate(answer,clusterView);
           flag.set(true);
         }
       }
-
-      @Override
-      public void nodesRemovedFromCluster(List<InetSocketAddress> nodes) {
-        
-      }
     });
 
    
-    List<EndpointStatus> e1 = mockCluster.join(s1, ZuTestUtil.CLUSTER_VIEW.get(s1.getPort()));
-    List<EndpointStatus> e2 = mockCluster.join(s2, ZuTestUtil.CLUSTER_VIEW.get(s2.getPort()));
-    List<EndpointStatus> e3 = mockCluster.join(s3, ZuTestUtil.CLUSTER_VIEW.get(s3.getPort()));
+    List<EndpointStatus> e1 = mockCluster.join(s1, CLUSTER_VIEW.get(s1.getPort()));
+    List<EndpointStatus> e2 = mockCluster.join(s2, CLUSTER_VIEW.get(s2.getPort()));
+    List<EndpointStatus> e3 = mockCluster.join(s3, CLUSTER_VIEW.get(s3.getPort()));
     
     while(!flag.get()){
       Thread.sleep(10);
