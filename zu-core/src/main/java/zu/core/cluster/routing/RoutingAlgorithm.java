@@ -2,6 +2,7 @@ package zu.core.cluster.routing;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -46,7 +47,15 @@ public abstract class RoutingAlgorithm<T> implements ZuClusterEventListener{
       clusterView.put(key, list);
     }
     
+    Set<T> set = new HashSet<T>();
+    Collection<ArrayList<T>> oldValues = clusterView.values();
+    for (ArrayList<T> list : oldValues) {
+      for (T t : list) {
+        set.add(t);
+      }
+    }
     updateCluster(clusterView);
+    socketDecorator.cleanup(set);
   }
   
   public void updateCluster(Map<Integer,ArrayList<T>> clusterView){

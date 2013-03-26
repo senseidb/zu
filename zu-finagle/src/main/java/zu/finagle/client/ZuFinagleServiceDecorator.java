@@ -1,9 +1,11 @@
 package zu.finagle.client;
 
 import java.net.InetSocketAddress;
+import java.util.Set;
 
 import org.apache.thrift.protocol.TBinaryProtocol;
 
+import scala.runtime.BoxedUnit;
 import zu.core.cluster.routing.InetSocketAddressDecorator;
 import zu.finagle.rpc.ZuThriftService;
 import zu.finagle.rpc.ZuTransport;
@@ -66,6 +68,16 @@ public class ZuFinagleServiceDecorator<Req, Res> implements InetSocketAddressDec
       }
       
     };
+  }
+
+  @Override
+  public void cleanup(Set<Service<Req, Res>> toBeClosed) {
+    for (Service<Req,Res> svc : toBeClosed) {
+      Future<BoxedUnit> closeFuture = svc.close();
+      if (closeFuture != null) {
+        closeFuture.apply();
+      }
+    }
   }
 
 }

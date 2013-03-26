@@ -30,7 +30,10 @@ public class ZuRoutingTest {
     public InetSocketAddress decorate(InetSocketAddress addr) {
       return addr;
     }
-    
+
+    @Override
+    public void cleanup(Set<InetSocketAddress> toBeClosed) {      
+    }
   };
   @BeforeClass
   public static void init(){
