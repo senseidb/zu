@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -19,6 +20,7 @@ public abstract class RoutingAlgorithm<T> implements ZuClusterEventListener{
   protected volatile Map<Integer,ArrayList<T>> clusterView;
   private volatile Set<Integer> shards = null;
   private final InetSocketAddressDecorator<T> socketDecorator;
+  private volatile Map<InetSocketAddress, T> addrMap = new HashMap<InetSocketAddress, T>();
   
   public RoutingAlgorithm(InetSocketAddressDecorator<T> socketDecorator) {
     this.socketDecorator = socketDecorator;
@@ -33,28 +35,44 @@ public abstract class RoutingAlgorithm<T> implements ZuClusterEventListener{
   public final void clusterChanged(Map<Integer, List<InetSocketAddress>> view){
     shards = view.keySet();
     Map<Integer, ArrayList<T>> clusterView = new HashMap<Integer, ArrayList<T>>();
+    Map<InetSocketAddress, T> newAddrMap = new HashMap<InetSocketAddress, T>();
     
     for (Entry<Integer,List<InetSocketAddress>> entry : view.entrySet()) {
       Integer key = entry.getKey();
       List<InetSocketAddress> value = entry.getValue();
       ArrayList<T> list = new ArrayList<T>(value.size());
       for (InetSocketAddress addr : value) {
-        T elem = socketDecorator.decorate(addr);
-        if (elem != null) {
-          list.add(elem);
+        T elem;
+        if (newAddrMap.containsKey(addr)){
+          elem = newAddrMap.get(addr);
         }
+        else {
+          elem = socketDecorator.decorate(addr);
+          if (elem != null) {
+            newAddrMap.put(addr, elem);
+          }
+        }
+        list.add(elem);
       }
       clusterView.put(key, list);
     }
     
-    Set<T> set = new HashSet<T>();
-    Collection<ArrayList<T>> oldValues = clusterView.values();
-    for (ArrayList<T> list : oldValues) {
-      for (T t : list) {
-        set.add(t);
+    List<InetSocketAddress> removed = new LinkedList<InetSocketAddress>();
+    
+    for (Entry<InetSocketAddress, T> entry : addrMap.entrySet()) {
+      InetSocketAddress host = entry.getKey();
+      if (!newAddrMap.containsKey(host)) {
+        // nodes in previous cluster, no longer there
+        removed.add(host);
       }
     }
+    
+    Set<T> set = new HashSet<T>();
+    for (InetSocketAddress host : removed) {
+      set.add(addrMap.get(host));
+    }
     updateCluster(clusterView);
+    addrMap = newAddrMap;
     socketDecorator.cleanup(set);
   }
   
