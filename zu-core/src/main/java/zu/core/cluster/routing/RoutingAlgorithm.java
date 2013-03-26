@@ -4,16 +4,19 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import zu.core.cluster.ZuClusterEventListener;
 
 public abstract class RoutingAlgorithm<T> implements ZuClusterEventListener{
   protected volatile Map<Integer,ArrayList<T>> clusterView;
+  private volatile Set<Integer> shards = null;
   private final InetSocketAddressDecorator<T> socketDecorator;
   
   public RoutingAlgorithm(InetSocketAddressDecorator<T> socketDecorator) {
@@ -22,8 +25,12 @@ public abstract class RoutingAlgorithm<T> implements ZuClusterEventListener{
   
   public abstract T route(byte[] key, int partition);
   
+  public Set<Integer> getShards() {
+    return shards == null ? new HashSet<Integer>() : shards;
+  }
   @Override
   public final void clusterChanged(Map<Integer, List<InetSocketAddress>> view){
+    shards = view.keySet();
     Map<Integer, ArrayList<T>> clusterView = new HashMap<Integer, ArrayList<T>>();
     
     for (Entry<Integer,List<InetSocketAddress>> entry : view.entrySet()) {

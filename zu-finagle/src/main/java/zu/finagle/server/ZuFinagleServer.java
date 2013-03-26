@@ -35,6 +35,10 @@ public class ZuFinagleServer implements ZuThriftService.ServiceIface{
   private final Map<String,RequestHandler<?,?>> reqHandlerMap;
   private Server server;
   
+  public ZuFinagleServer(int port) {
+    this("Zu server", port);
+  }
+  
   public ZuFinagleServer(String name, int port) {
     this.addr = new InetSocketAddress(port);
     this.name = name;
@@ -52,6 +56,7 @@ public class ZuFinagleServer implements ZuThriftService.ServiceIface{
         .codec(ThriftServerFramedCodec.get())
         .name(name)
         .bindTo(addr));
+    
   }
   
   public void shutdown(Duration timeout){

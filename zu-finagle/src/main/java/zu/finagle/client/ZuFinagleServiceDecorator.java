@@ -23,6 +23,10 @@ public class ZuFinagleServiceDecorator<Req, Res> implements InetSocketAddressDec
   private final int numThreads;
   private final String name;
   
+  public ZuFinagleServiceDecorator(String name, ZuSerializer<Req, Res> serializer) {
+    this(name, serializer, ZuClientFinagleServiceBuilder.DEFAULT_TIMEOUT_DURATION, ZuClientFinagleServiceBuilder.DEFAULT_NUM_THREADS);
+  }
+  
   public ZuFinagleServiceDecorator(String name, ZuSerializer<Req, Res> serializer, Duration timeout, int numThreads){
     this.serializer = serializer;
     this.timeout = timeout;
