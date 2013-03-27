@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 
 import zu.core.cluster.ZuCluster;
+import zu.finagle.serialize.ZuSerializer;
+import zu.finagle.server.ZuTransportService.RequestHandler;
 
 import com.twitter.common.zookeeper.Group.JoinException;
 import com.twitter.common.zookeeper.ServerSet.EndpointStatus;
@@ -78,5 +80,28 @@ public class ZuFinagleServer{
     if (endpoints != null) {
       cluster.leave(endpoints);
     }
+  }
+  
+  public static <Req, Res> ZuFinagleServer buildBroker(final String name, int port, final Service<Req, Res> svc, final ZuSerializer<Req, Res> serializer) {
+    ZuTransportService transportSvc = new ZuTransportService();
+    transportSvc.registerHandler(new RequestHandler<Req, Res>() {
+
+      @Override
+      public String getName() {
+        return name;
+      }
+
+      @Override
+      public Res handleRequest(Req req) {
+        return svc.apply(req).apply();
+      }
+
+      @Override
+      public ZuSerializer<Req, Res> getSerializer() {
+        return serializer;
+      }
+    });
+    ZuFinagleServer broker = new ZuFinagleServer(port, transportSvc.getService());
+    return broker;
   }
 }
