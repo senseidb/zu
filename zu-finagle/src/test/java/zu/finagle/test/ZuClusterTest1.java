@@ -7,21 +7,15 @@ import java.util.HashSet;
 import junit.framework.TestCase;
 
 import org.apache.thrift.protocol.TBinaryProtocol;
-import org.junit.Before;
 import org.junit.Test;
 
-import scala.runtime.BoxedUnit;
-import zu.core.cluster.routing.RoutingAlgorithm;
 import zu.finagle.client.ZuClientFinagleServiceBuilder;
-import zu.finagle.client.ZuClientProxy;
 import zu.finagle.client.ZuFinagleServiceDecorator;
 import zu.finagle.client.ZuTransportClientProxy;
 import zu.finagle.server.ZuFinagleServer;
 
 import com.twitter.finagle.Service;
-import com.twitter.finagle.thrift.ThriftClientRequest;
 import com.twitter.util.Future;
-import com.twitter.util.Time;
 
 public class ZuClusterTest1 extends ZuFinagleClusterTest {
   
