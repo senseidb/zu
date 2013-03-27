@@ -42,7 +42,7 @@ public class ZuClusterTest1 extends ZuFinagleClusterTest {
       
       @Override
       public Service<Req2, Resp2> wrap(final Service<ThriftClientRequest, byte[]> client) {
-        final TestService.ServiceIface svcIface =  new TestService.ServiceToClient(client, new TBinaryProtocol.Factory());
+        final ReqService.ServiceIface svcIface =  new ReqService.ServiceToClient(client, new TBinaryProtocol.Factory());
         return new Service<Req2, Resp2>() {
 
           @Override
@@ -88,7 +88,7 @@ public class ZuClusterTest1 extends ZuFinagleClusterTest {
   
   @Test
   @SuppressWarnings("unchecked")
-  public void testBroker() throws Exception {
+  public void testBrokerAsZuTransportService() throws Exception {
     int brokerPort = 6666;
     ZuFinagleServer broker = null;
     
@@ -120,7 +120,7 @@ public class ZuClusterTest1 extends ZuFinagleClusterTest {
   }
   
   @Test
-  public void testBroker2() throws Exception {
+  public void testBrokerAsFinagleService() throws Exception {
     int brokerPort = 6667;
     ZuFinagleServer broker = null;
     
@@ -128,7 +128,7 @@ public class ZuClusterTest1 extends ZuFinagleClusterTest {
       ZuClientFinagleServiceBuilder<Req2, Resp2> builder = new ZuClientFinagleServiceBuilder<Req2, Resp2>();
       final Service<Req2, Resp2> svc = builder.scatterGather(scatterGather).routingAlgorithm(routingAlgorithm).build();
       
-      TestService.ServiceIface svcImpl = new TestService.ServiceIface() {
+      ReqService.ServiceIface svcImpl = new ReqService.ServiceIface() {
 
         @Override
         public Future<Resp2> handle(Req2 req) {
@@ -137,7 +137,7 @@ public class ZuClusterTest1 extends ZuFinagleClusterTest {
         
       };
       
-      Service<byte[],byte[]> brokerSvc = new TestService.Service(svcImpl, new TBinaryProtocol.Factory());
+      Service<byte[],byte[]> brokerSvc = new ReqService.Service(svcImpl, new TBinaryProtocol.Factory());
       
       
       broker = new ZuFinagleServer(brokerPort, brokerSvc);
@@ -162,7 +162,7 @@ public class ZuClusterTest1 extends ZuFinagleClusterTest {
   }
   
   @Test
-  public void testCluster1() throws Exception {
+  public void testScatterGather() throws Exception {
     ZuClientFinagleServiceBuilder<Req2, Resp2> builder = new ZuClientFinagleServiceBuilder<Req2, Resp2>();
     
     Service<Req2, Resp2> svc = builder.scatterGather(scatterGather).routingAlgorithm(routingAlgorithm).build();

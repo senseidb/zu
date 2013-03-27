@@ -27,7 +27,7 @@ import com.twitter.util.Future;
 
 public abstract class ZuFinagleClusterTest extends BaseZooKeeperTest {
 
-  static class TestClusterHandler implements ZuTransportService.RequestHandler<Integer, HashSet<Integer>>, TestService.ServiceIface{
+  static class TestClusterHandler implements ZuTransportService.RequestHandler<Integer, HashSet<Integer>>, ReqService.ServiceIface{
     static final String SVC = "cluster";
 
     @SuppressWarnings("rawtypes")
@@ -68,7 +68,7 @@ public abstract class ZuFinagleClusterTest extends BaseZooKeeperTest {
     }
     
     public Service<byte[], byte[]> getService() {
-      return new TestService.Service(this, new TBinaryProtocol.Factory());
+      return new ReqService.Service(this, new TBinaryProtocol.Factory());
     }
   }
   

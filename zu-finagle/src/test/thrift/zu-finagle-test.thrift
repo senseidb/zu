@@ -16,6 +16,6 @@ struct Resp2{
   1: optional set<i32> vals
 }
 
-service TestService {
+service ReqService {
   Resp2 handle(1: Req2 req);
 }

@@ -34,7 +34,7 @@ import com.twitter.util.Return;
 import com.twitter.util.Throw;
 import com.twitter.finagle.thrift.ThriftClientRequest;
 
-public class TestService {
+public class ReqService {
 
   public interface Iface {
 
