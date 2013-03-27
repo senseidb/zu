@@ -4,6 +4,7 @@ import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import zu.core.cluster.ZuCluster;
 import zu.finagle.serialize.ZuSerializer;
@@ -63,7 +64,7 @@ public class ZuFinagleServer{
 
   private Map<String, List<EndpointStatus>> endpointMap = new HashMap<String, List<EndpointStatus>>();
   
-  public synchronized void joinCluster(ZuCluster cluster, List<Integer> shards) throws JoinException, InterruptedException {
+  public synchronized void joinCluster(ZuCluster cluster, Set<Integer> shards) throws JoinException, InterruptedException {
     String clusterName = cluster.getClusterName();
     List<EndpointStatus> endpoints = endpointMap.get(clusterName);
     if (endpoints == null) {

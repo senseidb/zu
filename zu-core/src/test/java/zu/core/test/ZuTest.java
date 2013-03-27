@@ -26,13 +26,13 @@ import com.twitter.common.zookeeper.testing.BaseZooKeeperTest;
 
 public class ZuTest extends BaseZooKeeperTest{
   
-  private static final Map<Integer,List<Integer>> CLUSTER_VIEW;
+  private static final Map<Integer,Set<Integer>> CLUSTER_VIEW;
   
   static{
-    CLUSTER_VIEW = new HashMap<Integer,List<Integer>>();
-    CLUSTER_VIEW.put(1, Arrays.asList(0,1));
-    CLUSTER_VIEW.put(2, Arrays.asList(1,2));
-    CLUSTER_VIEW.put(3, Arrays.asList(2,3));
+    CLUSTER_VIEW = new HashMap<Integer,Set<Integer>>();
+    CLUSTER_VIEW.put(1, new HashSet<Integer>(Arrays.asList(0,1)));
+    CLUSTER_VIEW.put(2, new HashSet<Integer>(Arrays.asList(1,2)));
+    CLUSTER_VIEW.put(3, new HashSet<Integer>(Arrays.asList(2,3)));
   }
   
   @BeforeClass

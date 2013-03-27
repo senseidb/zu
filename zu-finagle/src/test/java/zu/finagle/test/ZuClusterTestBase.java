@@ -33,14 +33,21 @@ import com.twitter.util.Time;
 
 public abstract class ZuClusterTestBase extends BaseZooKeeperTest {
 
-  public static int port1 = 6201;
-  public static ReqServiceImpl svcImpl1 = new ReqServiceImpl(new HashSet<Integer>(Arrays.asList(0, 1)));
+  public static class Node {
+    final int port;
+    final ReqServiceImpl svc;
+    
+    public Node(int port, ReqServiceImpl svc) {
+      this.port = port;
+      this.svc = svc;
+    }
+  }
   
-  public static int port2 = 6202;
-  public static ReqServiceImpl svcImpl2 = new ReqServiceImpl(new HashSet<Integer>(Arrays.asList(1, 2)));
-  
-  public static int port3 = 6203;
-  public static ReqServiceImpl svcImpl3 = new ReqServiceImpl(new HashSet<Integer>(Arrays.asList(2, 3)));
+  public static Node[] nodes = {
+    new Node(6201, new ReqServiceImpl(new HashSet<Integer>(Arrays.asList(0, 1)))),
+    new Node(6202, new ReqServiceImpl(new HashSet<Integer>(Arrays.asList(1, 2)))),
+    new Node(6203, new ReqServiceImpl(new HashSet<Integer>(Arrays.asList(2, 3))))
+  };
   
   public static ZuFinagleServer buildFinagleServiceServer(int port, ReqServiceImpl svcImpl) {
     Service<byte[], byte[]> svc = new ReqService.Service(svcImpl, new TBinaryProtocol.Factory());
@@ -51,6 +58,16 @@ public abstract class ZuClusterTestBase extends BaseZooKeeperTest {
     ZuTransportService zuSvc = new ZuTransportService();
     zuSvc.registerHandler(svcImpl);
     return new ZuFinagleServer(port, zuSvc.getService());
+  }
+  
+  public ZuFinagleServer buildServiceServer(Node node) {
+    ClusterType clusterType = getClusterType();
+    if (ClusterType.Finagle == clusterType) {
+      return buildFinagleServiceServer(node.port, node.svc);
+    }
+    else {
+      return buildZuTransportServiceServer(node.port, node.svc);
+    }
   }
   
   public static ZuScatterGatherer<Req2, Resp2> scatterGather = new ZuScatterGatherer<Req2, Resp2>(){
@@ -93,19 +110,14 @@ public abstract class ZuClusterTestBase extends BaseZooKeeperTest {
     
     List<Set<Integer>> partList = new ArrayList<Set<Integer>>();
     
+    for (Node node : nodes) {
+      ZuFinagleServer server = buildServiceServer(node);
+      partList.add(node.svc.getShards());
+      serverList.add(server);  
+    }
+    
+    
     if (clusterType == ClusterType.Finagle) {
-      ZuFinagleServer server = buildFinagleServiceServer(port1, svcImpl1);
-      partList.add(svcImpl1.getShards());
-      serverList.add(server);
-      
-      server = buildFinagleServiceServer(port2, svcImpl2);
-      partList.add(svcImpl2.getShards());
-      serverList.add(server);
-      
-      server = buildFinagleServiceServer(port3, svcImpl3);
-      partList.add(svcImpl3.getShards());
-      serverList.add(server);
-      
       clientProxy = new ZuClientProxy<Req2, Resp2>() {
         
         @Override
@@ -127,19 +139,7 @@ public abstract class ZuClusterTestBase extends BaseZooKeeperTest {
         }
       };
     }
-    else {
-      ZuFinagleServer server = buildZuTransportServiceServer(port1, svcImpl1);
-      partList.add(svcImpl1.getShards());
-      serverList.add(server);
-      
-      server = buildZuTransportServiceServer(port2, svcImpl2);
-      partList.add(svcImpl2.getShards());
-      serverList.add(server);
-      
-      server = buildZuTransportServiceServer(port3, svcImpl3);
-      partList.add(svcImpl3.getShards());
-      serverList.add(server);
-      
+    else {      
       clientProxy = new ZuTransportClientProxy<>(ReqServiceImpl.SVC, ReqServiceImpl.serializer);
     }
     
@@ -166,7 +166,7 @@ public abstract class ZuClusterTestBase extends BaseZooKeeperTest {
     int c = 0;
     for (ZuFinagleServer server : serverList) {
       server.start();
-      server.joinCluster(cluster, new ArrayList<Integer>(partList.get(c)));
+      server.joinCluster(cluster,partList.get(c));
       c++;
     }
     latch.await();

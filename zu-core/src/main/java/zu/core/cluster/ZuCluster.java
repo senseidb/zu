@@ -128,7 +128,7 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
    * @throws JoinException
    * @throws InterruptedException
    */
-  public List<EndpointStatus> join(InetSocketAddress addr, List<Integer> shards) throws JoinException, InterruptedException {
+  public List<EndpointStatus> join(InetSocketAddress addr, Set<Integer> shards) throws JoinException, InterruptedException {
     ArrayList<EndpointStatus> statuses = new ArrayList<EndpointStatus>(shards.size());
     for (Integer shard : shards){
       try{
