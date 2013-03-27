@@ -23,9 +23,12 @@ import zu.core.cluster.ZuCluster;
 import zu.core.cluster.ZuClusterEventListener;
 import zu.core.cluster.routing.InetSocketAddressDecorator;
 import zu.core.cluster.routing.RoutingAlgorithm;
+import zu.finagle.client.ZuScatterGatherer;
 import zu.finagle.test.ReqService.ServiceIface;
 import zu.finagle.test.ZuClusterTestBase.Node;
 
+import com.twitter.common.zookeeper.ServerSet.EndpointStatus;
+import com.twitter.common.zookeeper.ServerSet.UpdateException;
 import com.twitter.common.zookeeper.ZooKeeperClient;
 import com.twitter.common.zookeeper.testing.BaseZooKeeperTest;
 import com.twitter.finagle.Service;
@@ -40,14 +43,17 @@ import com.twitter.util.Future;
 
 public class StandardFinagleClusterTest extends BaseZooKeeperTest{
 
+  // cluster
   private ZuCluster cluster;
   
+  // a pool of servers
   private List<Server> serverList = new ArrayList<Server>();
   
   private RoutingAlgorithm.RandomAlgorithm<ReqService.ServiceIface> routingAlgorithm;
   
   static final int hostConnLimit = 100;
   
+  // this decorates an InetSocketAddress into a client interface to a ReqService.ServiceIface service
   private InetSocketAddressDecorator<ReqService.ServiceIface> clientServiceBuilder = new InetSocketAddressDecorator<ReqService.ServiceIface>() {
 
     @Override
@@ -66,45 +72,69 @@ public class StandardFinagleClusterTest extends BaseZooKeeperTest{
     }
   };
   
+  // timeout for partial results
   static final Duration partialResultTimeout = Duration.apply(10000, TimeUnit.MILLISECONDS);
   
-  public ReqService.ServiceIface buildBrokerService(final RoutingAlgorithm.RandomAlgorithm<ReqService.ServiceIface> routingAlgorithm) {
+  // keep track of endpoints from joining a cluster
+  private List<EndpointStatus> endpointList = new ArrayList<EndpointStatus>();
+  
+  /** implementation for a broker service
+   * @param routingAlgorithm al routing algorithm
+   * @param scatterGather scatter gather implementation for the broker
+   * @return broker service implementation
+   */
+  public ReqService.ServiceIface buildBrokerService(final RoutingAlgorithm.RandomAlgorithm<ReqService.ServiceIface> routingAlgorithm,
+      final ZuScatterGatherer<Req2, Resp2> scatterGather) {
+    
     ReqService.ServiceIface brokerService = new ReqService.ServiceIface() {
       
       @Override
       public Future<Resp2> handle(Req2 req) {
+        // get all the shards in the cluster
         Set<Integer> shards = routingAlgorithm.getShards();
         Map<Integer, Future<Resp2>> futureList = new HashMap<Integer,Future<Resp2>>();
+        
+        // for eah shard
         for (Integer shard : shards) {
+          // get a service from the routing algorithm
           ReqService.ServiceIface node = routingAlgorithm.route(null, shard);
           if (node != null) {
-            Req2 rewrittenReq = ZuClusterTestBase.scatterGather.rewrite(req, shard);
+            // rewrite the request according to this shard
+            Req2 rewrittenReq = scatterGather.rewrite(req, shard);
+            
+            // keep a future of it
             futureList.put(shard, node.handle(rewrittenReq));
           }
         }
         
         Map<Integer, Resp2> resList = new HashMap<Integer,Resp2>();
         
+        // gather all the results from each shard
         for (Entry<Integer, Future<Resp2>> entry : futureList.entrySet()) {
           Resp2 result = entry.getValue().apply(partialResultTimeout);
           resList.put(entry.getKey(), result);
         }
         
-        return ZuClusterTestBase.scatterGather.merge(resList);
+        // return the merged result
+        return scatterGather.merge(resList);
       }
     };
     
+    // returns the broker implementation
     return brokerService;
   }
   
   @Before
   public void setup() throws Exception{
     ZooKeeperClient zkClient = createZkClient();
+    
+    // create a new cluster on a given path
     cluster = new ZuCluster(zkClient, "/core/test3");
     
-
+    // instantiate a random routing algorithm
     routingAlgorithm = new RoutingAlgorithm.RandomAlgorithm<ReqService.ServiceIface>(clientServiceBuilder);
     
+    // connect the routing algorithm to the cluster
     cluster.addClusterEventListener(routingAlgorithm);
       
     
@@ -141,7 +171,8 @@ public class StandardFinagleClusterTest extends BaseZooKeeperTest{
                   .codec(ThriftServerFramedCodec.get())
                   .bindTo(addr));
       
-      cluster.join(addr, svcImpl.getShards());
+      List<EndpointStatus> statuses = cluster.join(addr, svcImpl.getShards());
+      endpointList.addAll(statuses);
       serverList.add(server);
     }
     
@@ -149,14 +180,22 @@ public class StandardFinagleClusterTest extends BaseZooKeeperTest{
   }
   
   @Test
+  /**
+   * Tests the broker logic as a service
+   * @throws Exception
+   */
   public void testBrokerService() throws Exception {
-    ReqService.ServiceIface brokerSvc = buildBrokerService(routingAlgorithm);
+    ReqService.ServiceIface brokerSvc = buildBrokerService(routingAlgorithm, ZuClusterTestBase.scatterGather);
     Future<Resp2> future  = brokerSvc.handle(new Req2());
     Resp2 merged = future.apply();
     TestCase.assertEquals(new HashSet<Integer>(Arrays.asList(0,1,2,3)), merged.getVals());
   }
   
   @Test
+  /**
+   * Tests the broker logic as a server
+   * @throws Exception
+   */
   public void testBrokerServiceAsAServer() throws Exception {
     int brokerPort = 6667;
     InetSocketAddress brokerAddr = new InetSocketAddress(brokerPort);
@@ -164,7 +203,7 @@ public class StandardFinagleClusterTest extends BaseZooKeeperTest{
     
     try {
       
-      ReqService.ServiceIface brokerSvc = buildBrokerService(routingAlgorithm);
+      ReqService.ServiceIface brokerSvc = buildBrokerService(routingAlgorithm, ZuClusterTestBase.scatterGather);
       
       // start broker as a service
       broker = ServerBuilder.safeBuild(
@@ -194,6 +233,11 @@ public class StandardFinagleClusterTest extends BaseZooKeeperTest{
   public void shutdown() {
     for (Server s : serverList) {
       s.close().apply();
+      try {
+        cluster.leave(endpointList);
+      } catch (UpdateException e) {
+        e.printStackTrace();
+      }
     }
   }
 }

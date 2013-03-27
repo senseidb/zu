@@ -24,6 +24,7 @@ import zu.finagle.client.ZuTransportClientProxy;
 import zu.finagle.server.ZuFinagleServer;
 import zu.finagle.server.ZuTransportService;
 
+import com.twitter.common.zookeeper.ServerSet.UpdateException;
 import com.twitter.common.zookeeper.ZooKeeperClient;
 import com.twitter.common.zookeeper.testing.BaseZooKeeperTest;
 import com.twitter.finagle.Service;
@@ -176,6 +177,11 @@ public abstract class ZuClusterTestBase extends BaseZooKeeperTest {
   public void shutdown() {
     for (ZuFinagleServer s : serverList) {
       s.shutdown();
+      try {
+        s.leaveCluster(cluster);
+      } catch (UpdateException e) {
+        e.printStackTrace();
+      }
     }
   }
 }
