@@ -34,7 +34,7 @@ Zu comes from the Chinese character: 组, which means a group or a set.
 ##### Core:
     <groupid>com.senseidb.zu</groupid>
     <artifactId>zu-core</artifactId>
-##### Finagle:
+##### Finagle extension:
     <groupid>com.senseidb.zu</groupid>
     <artifactId>zu-finagle</artifactId>
 
