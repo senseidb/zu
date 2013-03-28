@@ -56,8 +56,6 @@ public class ZuFinagleTest extends BaseZooKeeperTest{
     
     ZuFinagleServer server = new ZuFinagleServer(port, zuSvc.getService());
     
-    
-    
     server.start();
     Service<Req, Resp> svc = null;
     try {
