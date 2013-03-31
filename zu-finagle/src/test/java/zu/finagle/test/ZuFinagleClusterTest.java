@@ -16,6 +16,9 @@ import zu.finagle.client.ZuTransportClientProxy;
 import zu.finagle.server.ZuFinagleServer;
 
 import com.twitter.finagle.Service;
+import com.twitter.finagle.builder.ClientBuilder;
+import com.twitter.finagle.thrift.ThriftClientFramedCodec;
+import com.twitter.finagle.thrift.ThriftClientRequest;
 import com.twitter.util.Future;
 
 public class ZuFinagleClusterTest extends ZuClusterTestBase {
@@ -42,7 +45,6 @@ public class ZuFinagleClusterTest extends ZuClusterTestBase {
       broker.start();
       
       ZuTransportClientProxy<Req2, Resp2> brokerClientProxy = new ZuTransportClientProxy<>(ReqServiceImpl.SVC, ReqServiceImpl.serializer);
-      
       
       Service<Req2, Resp2> brokerClient = new ZuFinagleServiceDecorator<Req2, Resp2>(brokerClientProxy).decorate(new InetSocketAddress(brokerPort));
       
@@ -82,14 +84,18 @@ public class ZuFinagleClusterTest extends ZuClusterTestBase {
       
       broker.start();
       
-      ZuClientFinagleServiceBuilder<Req2, Resp2> clientBuilder = new ZuClientFinagleServiceBuilder<Req2, Resp2>();
-      Service<Req2, Resp2> brokerClient = clientBuilder.host(new InetSocketAddress(brokerPort)).clientProxy(clientProxy).build();
+      Service<ThriftClientRequest, byte[]> client = ClientBuilder.safeBuild(ClientBuilder.get()
+          .hosts(new InetSocketAddress(brokerPort))
+          .codec(ThriftClientFramedCodec.get())
+          .hostConnectionLimit(ZuClientFinagleServiceBuilder.DEFAULT_NUM_THREADS));
       
-      Future<Resp2> future  = brokerClient.apply(new Req2());
+      ReqService.ServiceIface brokerClient = new ReqService.ServiceToClient(client, new TBinaryProtocol.Factory());
+      
+      Future<Resp2> future  = brokerClient.handle(new Req2());
       Resp2 merged = future.apply();
       TestCase.assertEquals(new HashSet<Integer>(Arrays.asList(0,1,2,3)), merged.getVals());
       
-      brokerClient.close(); 
+      client.close();
     }
     finally {
       if (broker != null) {

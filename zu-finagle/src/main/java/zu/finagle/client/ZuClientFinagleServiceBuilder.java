@@ -16,9 +16,9 @@ import com.twitter.util.Future;
 
 public final class ZuClientFinagleServiceBuilder<Req, Res>{
   
-  static final int DEFAULT_NUM_THREADS = 8;  // default thread count
-  static final Duration DEFAULT_PARTIAL_TIMEOUT_DURATION = Duration.apply(10, TimeUnit.SECONDS);
-  static final Duration DEFAULT_TIMEOUT_DURATION = Duration.apply(10, TimeUnit.SECONDS);
+  public static final int DEFAULT_NUM_THREADS = 8;  // default thread count
+  public static final Duration DEFAULT_PARTIAL_TIMEOUT_DURATION = Duration.apply(10, TimeUnit.SECONDS);
+  public static final Duration DEFAULT_TIMEOUT_DURATION = Duration.apply(10, TimeUnit.SECONDS);
   
   private Duration timeout = DEFAULT_TIMEOUT_DURATION;
   private InetSocketAddress host = null;

@@ -103,6 +103,7 @@ public abstract class ZuClusterTestBase extends BaseZooKeeperTest {
   protected abstract ClusterType getClusterType();
   
   @Before
+  @SuppressWarnings("unchecked")
   public void setup() throws Exception{
     ZooKeeperClient zkClient = createZkClient();
     cluster = new ZuCluster(zkClient, "/core/test2");

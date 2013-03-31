@@ -24,20 +24,17 @@ import zu.core.cluster.ZuClusterEventListener;
 import zu.core.cluster.routing.InetSocketAddressDecorator;
 import zu.core.cluster.routing.RoutingAlgorithm;
 import zu.finagle.client.ZuScatterGatherer;
+import zu.finagle.server.ZuFinagleServer;
 import zu.finagle.test.ReqService.ServiceIface;
 import zu.finagle.test.ZuClusterTestBase.Node;
 
-import com.twitter.common.zookeeper.ServerSet.EndpointStatus;
 import com.twitter.common.zookeeper.ServerSet.UpdateException;
 import com.twitter.common.zookeeper.ZooKeeperClient;
 import com.twitter.common.zookeeper.testing.BaseZooKeeperTest;
 import com.twitter.finagle.Service;
 import com.twitter.finagle.builder.ClientBuilder;
-import com.twitter.finagle.builder.Server;
-import com.twitter.finagle.builder.ServerBuilder;
 import com.twitter.finagle.thrift.ThriftClientFramedCodec;
 import com.twitter.finagle.thrift.ThriftClientRequest;
-import com.twitter.finagle.thrift.ThriftServerFramedCodec;
 import com.twitter.util.Duration;
 import com.twitter.util.Future;
 
@@ -47,7 +44,7 @@ public class StandardFinagleClusterTest extends BaseZooKeeperTest{
   private ZuCluster cluster;
   
   // a pool of servers
-  private List<Server> serverList = new ArrayList<Server>();
+  private List<ZuFinagleServer> serverList = new ArrayList<ZuFinagleServer>();
   
   private RoutingAlgorithm.RandomAlgorithm<ReqService.ServiceIface> routingAlgorithm;
   
@@ -75,8 +72,6 @@ public class StandardFinagleClusterTest extends BaseZooKeeperTest{
   // timeout for partial results
   static final Duration partialResultTimeout = Duration.apply(10000, TimeUnit.MILLISECONDS);
   
-  // keep track of endpoints from joining a cluster
-  private List<EndpointStatus> endpointList = new ArrayList<EndpointStatus>();
   
   /** implementation for a broker service
    * @param routingAlgorithm al routing algorithm
@@ -161,18 +156,14 @@ public class StandardFinagleClusterTest extends BaseZooKeeperTest{
     for (Node node : ZuClusterTestBase.nodes) {
       
       ReqServiceImpl svcImpl = node.svc;
-      InetSocketAddress addr = new InetSocketAddress(node.port);
       
-      // build a standard finagle server from svc
-      Server server = ServerBuilder.safeBuild(
-          new ReqService.Service(svcImpl, new TBinaryProtocol.Factory()),
-          ServerBuilder.get()
-                  .name("TestServer:"+node.port)
-                  .codec(ThriftServerFramedCodec.get())
-                  .bindTo(addr));
+      // build a zu finagle server from svc
+      ZuFinagleServer server = new ZuFinagleServer("TestServer:"+node.port, node.port, 
+          new ReqService.Service(svcImpl, new TBinaryProtocol.Factory()));
+     
+      server.start();
+      server.joinCluster(cluster, svcImpl.getShards());
       
-      List<EndpointStatus> statuses = cluster.join(addr, svcImpl.getShards());
-      endpointList.addAll(statuses);
       serverList.add(server);
     }
     
@@ -199,20 +190,16 @@ public class StandardFinagleClusterTest extends BaseZooKeeperTest{
   public void testBrokerServiceAsAServer() throws Exception {
     int brokerPort = 6667;
     InetSocketAddress brokerAddr = new InetSocketAddress(brokerPort);
-    Server broker = null;
+    ZuFinagleServer broker = null;
     
     try {
       
       ReqService.ServiceIface brokerSvc = buildBrokerService(routingAlgorithm, ZuClusterTestBase.scatterGather);
       
-      // start broker as a service
-      broker = ServerBuilder.safeBuild(
-          new ReqService.Service(brokerSvc, new TBinaryProtocol.Factory()),
-          ServerBuilder.get()
-                  .name("TestBroker:"+ brokerPort)
-                  .codec(ThriftServerFramedCodec.get())
-                  .bindTo(brokerAddr));
-      
+      // start broker as a zu finagle server
+      broker = new ZuFinagleServer("TestBroker:"+ brokerPort, brokerPort, new ReqService.Service(brokerSvc, new TBinaryProtocol.Factory())); 
+          
+      broker.start();
       
       ReqService.ServiceIface brokerClient = clientServiceBuilder.decorate(brokerAddr);
       
@@ -223,7 +210,7 @@ public class StandardFinagleClusterTest extends BaseZooKeeperTest{
     }
     finally {
       if (broker != null) {
-        broker.close();
+        broker.shutdown();
       }
     }
   }
@@ -231,12 +218,14 @@ public class StandardFinagleClusterTest extends BaseZooKeeperTest{
 
   @After
   public void shutdown() {
-    for (Server s : serverList) {
-      s.close().apply();
-      try {
-        cluster.leave(endpointList);
+    for (ZuFinagleServer s : serverList) {
+      try{
+        s.leaveCluster(cluster);
       } catch (UpdateException e) {
-        e.printStackTrace();
+        TestCase.fail(e.getMessage());
+      }
+      finally{
+        s.shutdown();
       }
     }
   }

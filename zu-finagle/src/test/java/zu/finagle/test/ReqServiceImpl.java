@@ -3,13 +3,10 @@ package zu.finagle.test;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.thrift.protocol.TBinaryProtocol;
-
 import zu.finagle.serialize.JOSSSerializer;
 import zu.finagle.serialize.ZuSerializer;
 import zu.finagle.server.ZuTransportService;
 
-import com.twitter.finagle.Service;
 import com.twitter.util.Future;
 
 public class ReqServiceImpl implements ZuTransportService.RequestHandler<Req2, Resp2>, ReqService.ServiceIface{
@@ -53,9 +50,5 @@ public class ReqServiceImpl implements ZuTransportService.RequestHandler<Req2, R
       resp.vals.add(req.getNum());  
     }
     return Future.value(resp);
-  }
-  
-  public Service<byte[], byte[]> getService() {
-    return new ReqService.Service(this, new TBinaryProtocol.Factory());
   }
 }
