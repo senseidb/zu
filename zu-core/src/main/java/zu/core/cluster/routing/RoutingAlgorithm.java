@@ -15,6 +15,10 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import zu.core.cluster.ZuClusterEventListener;
 
+/**
+ * An abstraction for a routing algorithm that maps a key and a shard id to a decorated object from a socket address
+ * @param <T> decorated object from a socket address
+ */
 public abstract class RoutingAlgorithm<T> implements ZuClusterEventListener{
   protected volatile Map<Integer,ArrayList<T>> clusterView;
   private volatile Set<Integer> shards = null;
@@ -25,7 +29,7 @@ public abstract class RoutingAlgorithm<T> implements ZuClusterEventListener{
     this.socketDecorator = socketDecorator;
   }
   
-  public abstract T route(byte[] key, int partition);
+  public abstract T route(byte[] key, int shard);
   
   public Set<Integer> getShards() {
     return shards == null ? new HashSet<Integer>() : shards;
