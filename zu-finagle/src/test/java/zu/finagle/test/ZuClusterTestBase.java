@@ -85,7 +85,10 @@ public abstract class ZuClusterTestBase extends BaseZooKeeperTest {
 
     @Override
     public Req2 rewrite(Req2 req, int shard) {
-     return req.setNum(shard);
+      
+     // you don't want to use the same copy for each shard with any modification.
+     Req2 returned = req.deepCopy();
+     return returned.setNum(shard);
     }
   };
   
