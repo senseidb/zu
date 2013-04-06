@@ -17,9 +17,9 @@ import scala.runtime.BoxedUnit;
 import zu.core.cluster.ZuCluster;
 import zu.core.cluster.ZuClusterEventListener;
 import zu.core.cluster.routing.RoutingAlgorithm;
+import zu.core.cluster.routing.ZuScatterGatherer;
 import zu.finagle.client.ZuClientProxy;
 import zu.finagle.client.ZuFinagleServiceDecorator;
-import zu.finagle.client.ZuScatterGatherer;
 import zu.finagle.client.ZuTransportClientProxy;
 import zu.finagle.server.ZuFinagleServer;
 import zu.finagle.server.ZuTransportService;
@@ -73,14 +73,14 @@ public abstract class ZuClusterTestBase extends BaseZooKeeperTest {
   
   public static ZuScatterGatherer<Req2, Resp2> scatterGather = new ZuScatterGatherer<Req2, Resp2>(){
     @Override
-    public Future<Resp2> merge(Map<Integer, Resp2> results) {
+    public Resp2 merge(Map<Integer, Resp2> results) {
       HashSet<Integer> merged = new HashSet<Integer>();
       for (Resp2 subResult : results.values()) {
         merged.addAll(subResult.vals);
       }
       Resp2 r = new Resp2();
       r.setVals(merged);
-      return Future.value(r);
+      return r;
     }
 
     @Override

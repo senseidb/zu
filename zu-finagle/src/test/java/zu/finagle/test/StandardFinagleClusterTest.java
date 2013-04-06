@@ -23,7 +23,7 @@ import zu.core.cluster.ZuCluster;
 import zu.core.cluster.ZuClusterEventListener;
 import zu.core.cluster.routing.InetSocketAddressDecorator;
 import zu.core.cluster.routing.RoutingAlgorithm;
-import zu.finagle.client.ZuScatterGatherer;
+import zu.core.cluster.routing.ZuScatterGatherer;
 import zu.finagle.server.ZuFinagleServer;
 import zu.finagle.test.ReqService.ServiceIface;
 import zu.finagle.test.ZuClusterTestBase.Node;
@@ -111,7 +111,7 @@ public class StandardFinagleClusterTest extends BaseZooKeeperTest{
         }
         
         // return the merged result
-        return scatterGather.merge(resList);
+        return Future.value(scatterGather.merge(resList));
       }
     };
     

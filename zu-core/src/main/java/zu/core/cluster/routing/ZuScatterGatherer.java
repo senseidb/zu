@@ -1,8 +1,6 @@
-package zu.finagle.client;
+package zu.core.cluster.routing;
 
 import java.util.Map;
-
-import com.twitter.util.Future;
 
 public abstract class ZuScatterGatherer<Req, Res> {
 
@@ -10,5 +8,5 @@ public abstract class ZuScatterGatherer<Req, Res> {
     return req;
   }
   
-  abstract public Future<Res> merge(Map<Integer, Res> results);
+  abstract public Res merge(Map<Integer, Res> results);
 }

@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import zu.core.cluster.routing.RoutingAlgorithm;
+import zu.core.cluster.routing.ZuScatterGatherer;
 
 import com.twitter.finagle.Service;
 import com.twitter.util.Duration;
@@ -111,7 +112,7 @@ public final class ZuClientFinagleServiceBuilder<Req, Res>{
           resList.put(entry.getKey(), result);
         }
         
-        return scatterGather.merge(resList);
+        return  Future.value(scatterGather.merge(resList));
       }
     }; 
   }
