@@ -2,6 +2,7 @@ package zu.core.cluster;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -53,7 +54,7 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
    * @throws MonitorException
    */
   public ZuCluster(String host, int port, String clusterName) throws MonitorException {
-    this(new InetSocketAddress(host,port), clusterName, DEFAULT_TIMEOUT);
+    this(Arrays.asList(new InetSocketAddress(host,port)), clusterName, DEFAULT_TIMEOUT);
   }
   
   /**
@@ -65,7 +66,7 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
    */
   public ZuCluster(String host, int port, String clusterName,
       int timeout) throws MonitorException {
-    this(new InetSocketAddress(host,port), clusterName, timeout);
+    this(Arrays.asList(new InetSocketAddress(host,port)), clusterName, timeout);
   }
   
   /**
@@ -74,18 +75,18 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
    * @throws MonitorException
    */
   public ZuCluster(InetSocketAddress zookeeperAddr, String clusterName) throws MonitorException{
-    this(zookeeperAddr, clusterName, DEFAULT_TIMEOUT);
+    this(Arrays.asList(zookeeperAddr), clusterName, DEFAULT_TIMEOUT);
   }
   
   /**
-   * @param zookeeperAddr zookeeper address
+   * @param zookeeperAddrs zookeeper hosts
    * @param clusterName name of the cluster
    * @param timeout zookeeper timeout in seconds
    * @throws MonitorException
    */
-  public ZuCluster(InetSocketAddress zookeeperAddr, String clusterName,
+  public ZuCluster(Iterable<InetSocketAddress> zookeeperAddrs, String clusterName,
       int timeout) throws MonitorException{
-    this(new ZooKeeperClient(Amount.of(timeout, Time.SECONDS), Credentials.NONE, zookeeperAddr), clusterName);
+    this(new ZooKeeperClient(Amount.of(timeout, Time.SECONDS), Credentials.NONE, zookeeperAddrs), clusterName);
   }
   
   /**
