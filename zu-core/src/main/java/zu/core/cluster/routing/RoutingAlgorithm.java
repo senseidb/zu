@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -60,25 +59,19 @@ public abstract class RoutingAlgorithm<T> implements ZuClusterEventListener{
       clusterView.put(key, list);
     }
     
-    List<InetSocketAddress> removed = new LinkedList<InetSocketAddress>();
-    
-    for (Entry<InetSocketAddress, T> entry : addrMap.entrySet()) {
-      InetSocketAddress host = entry.getKey();
-      if (!newAddrMap.containsKey(host)) {
-        // nodes in previous cluster, no longer there
-        removed.add(host);
-      }
-    }
-    
-    Set<T> set = new HashSet<T>();
-    for (InetSocketAddress host : removed) {
-      set.add(addrMap.get(host));
-    }
     updateCluster(clusterView);
     addrMap = newAddrMap;
-    socketDecorator.cleanup(set);
   }
   
+  @Override
+  public void nodesRemoved(Set<InetSocketAddress> removedNodes) {
+    Set<T> set = new HashSet<T>();
+    for (InetSocketAddress host : removedNodes) {
+      set.add(addrMap.get(host));
+    }
+    socketDecorator.cleanup(set);
+  }
+
   public void updateCluster(Map<Integer,ArrayList<T>> clusterView){
     this.clusterView = clusterView;
   }

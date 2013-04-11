@@ -80,6 +80,10 @@ public class ZuTest extends BaseZooKeeperTest{
           latch.countDown();
         }
       }
+
+      @Override
+      public void nodesRemoved(Set<InetSocketAddress> removedNodes) {
+      }
     });
 
    
@@ -117,6 +121,11 @@ public class ZuTest extends BaseZooKeeperTest{
           validate(answer,clusterView);
           flag.set(true);
         }
+      }
+
+      @Override
+      public void nodesRemoved(Set<InetSocketAddress> removedNodes) {
+        
       }
     });
 

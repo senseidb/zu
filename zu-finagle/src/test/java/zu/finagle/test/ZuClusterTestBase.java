@@ -166,6 +166,11 @@ public abstract class ZuClusterTestBase extends BaseZooKeeperTest {
           }
         }
       }
+
+      @Override
+      public void nodesRemoved(Set<InetSocketAddress> removedNodes) {
+        
+      }
     });
     
     int c = 0;

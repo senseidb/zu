@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -185,7 +186,7 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
   public void onChange(ImmutableSet<ServiceInstance> hostSet) {
     NodeClusterView oldView = clusterView.get();
     NodeClusterView newView = new NodeClusterView();
-    List<InetSocketAddress> cleanupList = new LinkedList<InetSocketAddress>();
+    Set<InetSocketAddress> cleanupList = new HashSet<InetSocketAddress>();
     
     for (ServiceInstance si : hostSet){
       
@@ -221,6 +222,10 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
     for (ZuClusterEventListener lsnr : lsnrs){
      lsnr.clusterChanged(newView.partMap); 
     }
+    
+    for (ZuClusterEventListener lsnr : lsnrs){
+      lsnr.nodesRemoved(cleanupList); 
+     }
   }
   
   /**

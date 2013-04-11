@@ -149,6 +149,11 @@ public class StandardFinagleClusterTest extends BaseZooKeeperTest{
           }
         }
       }
+
+      @Override
+      public void nodesRemoved(Set<InetSocketAddress> removedNodes) {
+        
+      }
     });
     
     // start the servers and join the cluster
