@@ -71,15 +71,6 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
   }
   
   /**
-   * @param zookeeperAddr zookeeper address
-   * @param clusterName name of the cluster
-   * @throws MonitorException
-   */
-  public ZuCluster(InetSocketAddress zookeeperAddr, String clusterName) throws MonitorException{
-    this(Arrays.asList(zookeeperAddr), clusterName, DEFAULT_TIMEOUT);
-  }
-  
-  /**
    * @param zookeeperAddrs zookeeper hosts
    * @param clusterName name of the cluster
    * @param timeout zookeeper timeout in seconds
