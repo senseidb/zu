@@ -111,6 +111,7 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
    */
   public void addClusterEventListener(ZuClusterEventListener lsnr){
     lsnrs.add(lsnr);
+    lsnr.clusterChanged(this.clusterView.get().partMap);
   }
 
   /**

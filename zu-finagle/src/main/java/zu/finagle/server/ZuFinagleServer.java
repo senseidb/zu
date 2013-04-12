@@ -21,11 +21,21 @@ import com.twitter.util.Duration;
 import com.twitter.util.Future;
 
 public class ZuFinagleServer{
+  static final int DEFAULT_MAX_CONCURRENT_REQUESTS = 100;
   private final InetSocketAddress addr;
   private final String name;
   private Server server;
   private final Service<byte[], byte[]> svc;
+  private int maxConcurrentRequests = DEFAULT_MAX_CONCURRENT_REQUESTS;
   
+  public int getMaxConcurrentRequests() {
+    return maxConcurrentRequests;
+  }
+
+  public void setMaxConcurrentRequests(int maxConcurrentRequests) {
+    this.maxConcurrentRequests = maxConcurrentRequests;
+  }
+
   public ZuFinagleServer(int port, Service<byte[], byte[]> svc) {
     this("Zu server", port, svc);
   }
@@ -37,11 +47,12 @@ public class ZuFinagleServer{
     this.svc = svc;
   }
   
+  
   public void start() {
     server = ServerBuilder.safeBuild(svc,
         ServerBuilder.get()
         .codec(ThriftServerFramedCodec.get())
-        .name(name)
+        .name(name).maxConcurrentRequests(maxConcurrentRequests)
         .bindTo(addr));
     
   }

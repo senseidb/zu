@@ -16,6 +16,10 @@ struct Resp2{
   1: optional set<i32> vals
 }
 
+service StrLenService {
+  Resp strlen(1: Req req);
+}
+
 service ReqService {
   Resp2 handle(1: Req2 req);
 }
