@@ -76,19 +76,19 @@ public class ZuFinagleServer{
   private Map<String, List<EndpointStatus>> endpointMap = new HashMap<String, List<EndpointStatus>>();
   
   public synchronized void joinCluster(ZuCluster cluster, Set<Integer> shards) throws JoinException, InterruptedException {
-    String clusterName = cluster.getClusterName();
-    List<EndpointStatus> endpoints = endpointMap.get(clusterName);
+    String clusterId = cluster.getClusterId();
+    List<EndpointStatus> endpoints = endpointMap.get(clusterId);
     if (endpoints == null) {
       endpoints = cluster.join(addr, shards);
-      endpointMap.put(clusterName, endpoints);
+      endpointMap.put(clusterId, endpoints);
     }
     else {
-      throw new JoinException("cluster "+clusterName+" already joined, leave first", null);
+      throw new JoinException("cluster "+clusterId+" already joined, leave first", null);
     }
   }
   
   public void leaveCluster(ZuCluster cluster) throws UpdateException{
-    List<EndpointStatus> endpoints = endpointMap.remove(cluster.getClusterName());
+    List<EndpointStatus> endpoints = endpointMap.remove(cluster.getClusterId());
     if (endpoints != null) {
       cluster.leave(endpoints);
     }

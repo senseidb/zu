@@ -101,7 +101,7 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
     serverSet.monitor(this);
   }
   
-  public String getclusterId() {
+  public String getClusterId() {
     return clusterId;
   }
   
