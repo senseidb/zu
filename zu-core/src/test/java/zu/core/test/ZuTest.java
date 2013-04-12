@@ -69,6 +69,8 @@ public class ZuTest extends BaseZooKeeperTest{
     
     final CountDownLatch latch = new CountDownLatch(2);
     
+    final CountDownLatch shutdownLatch = new CountDownLatch(1);
+    
     mockCluster.addClusterEventListener(new ZuClusterEventListener() {
       
       @Override
@@ -83,6 +85,7 @@ public class ZuTest extends BaseZooKeeperTest{
 
       @Override
       public void nodesRemoved(Set<InetSocketAddress> removedNodes) {
+        shutdownLatch.countDown();
       }
     });
 
@@ -92,6 +95,7 @@ public class ZuTest extends BaseZooKeeperTest{
     latch.await();
     
     mockCluster.leave(e1);
+    shutdownLatch.await();
   }
   
   @Test
@@ -111,21 +115,30 @@ public class ZuTest extends BaseZooKeeperTest{
     answer.put(2, new HashSet<Integer>(Arrays.asList(2,3)));
     answer.put(3, new HashSet<Integer>(Arrays.asList(3)));
     
-    final AtomicBoolean flag = new AtomicBoolean(false);
+    final HashSet<Integer> partitions = new HashSet<Integer>();
     
+    final HashSet<InetSocketAddress> droppedServers = new HashSet<InetSocketAddress>();
+    
+    final CountDownLatch latch = new CountDownLatch(4);
+    final CountDownLatch shutdownLatch = new CountDownLatch(3);
     mockCluster.addClusterEventListener(new ZuClusterEventListener() {  
       @Override
       public void clusterChanged(Map<Integer, List<InetSocketAddress>> clusterView) {
         int numPartsJoined = clusterView.size();
-        if (numPartsJoined == 4){
-          validate(answer,clusterView);
-          flag.set(true);
+        if (!partitions.contains(numPartsJoined)) {
+          partitions.add(numPartsJoined);
+          latch.countDown();
         }
       }
 
       @Override
       public void nodesRemoved(Set<InetSocketAddress> removedNodes) {
-        
+        for (InetSocketAddress node : removedNodes) {
+          if (!droppedServers.contains(node)) {
+            droppedServers.add(node);
+            shutdownLatch.countDown();
+          }
+        }
       }
     });
 
@@ -134,12 +147,12 @@ public class ZuTest extends BaseZooKeeperTest{
     List<EndpointStatus> e2 = mockCluster.join(s2, CLUSTER_VIEW.get(s2.getPort()));
     List<EndpointStatus> e3 = mockCluster.join(s3, CLUSTER_VIEW.get(s3.getPort()));
     
-    while(!flag.get()){
-      Thread.sleep(10);
-    }
+    latch.await();
     
     mockCluster.leave(e1);
     mockCluster.leave(e2);
     mockCluster.leave(e3);
+    
+    shutdownLatch.await();
   }
 }
