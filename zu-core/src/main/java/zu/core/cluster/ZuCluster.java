@@ -37,9 +37,9 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
    */
   public static final int DEFAULT_TIMEOUT = 300;
   private final ServerSet serverSet;
+  private final List<ZuClusterEventListener> listeners;
+  private final String clusterId;
   private final ZooKeeperClient zkClient;
-  private final List<ZuClusterEventListener> lsnrs;
-  private final String clusterName;
   
   private static class NodeClusterView{
     Map<Endpoint,InetSocketAddress> nodesMap = new HashMap<Endpoint,InetSocketAddress>();
@@ -51,58 +51,58 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
   /**
    * @param host zookeeper host
    * @param port zookeeper port
-   * @param clusterName name of the cluster
+   * @param clusterId name of the cluster
    * @throws MonitorException
    */
-  public ZuCluster(String host, int port, String clusterName) throws MonitorException {
-    this(Arrays.asList(new InetSocketAddress(host,port)), clusterName, DEFAULT_TIMEOUT);
+  public ZuCluster(String host, int port, String clusterId) throws MonitorException {
+    this(Arrays.asList(new InetSocketAddress(host,port)), clusterId, DEFAULT_TIMEOUT);
   }
   
   /**
    * @param host zookeeper host
    * @param port zookeeper port
-   * @param clusterName name of the cluster
+   * @param clusterId name of the cluster
    * @param timeout zookeeper timeout in seconds
    * @throws MonitorException
    */
-  public ZuCluster(String host, int port, String clusterName,
+  public ZuCluster(String host, int port, String clusterId,
       int timeout) throws MonitorException {
-    this(Arrays.asList(new InetSocketAddress(host,port)), clusterName, timeout);
+    this(Arrays.asList(new InetSocketAddress(host,port)), clusterId, timeout);
   }
   
   /**
    * @param zookeeperAddrs zookeeper hosts
-   * @param clusterName name of the cluster
+   * @param clusterId name of the cluster
    * @param timeout zookeeper timeout in seconds
    * @throws MonitorException
    */
-  public ZuCluster(Iterable<InetSocketAddress> zookeeperAddrs, String clusterName,
+  public ZuCluster(Iterable<InetSocketAddress> zookeeperAddrs, String clusterId,
       int timeout) throws MonitorException{
-    this(new ZooKeeperClient(Amount.of(timeout, Time.SECONDS), Credentials.NONE, zookeeperAddrs), clusterName);
+    this(new ZooKeeperClient(Amount.of(timeout, Time.SECONDS), Credentials.NONE, zookeeperAddrs), clusterId);
   }
   
   /**
    * @param zkClient A zookeeper client
-   * @param clusterName name of the cluster
+   * @param clusterId name of the cluster
    * @throws MonitorException
    */
-  public ZuCluster(ZooKeeperClient zkClient, String clusterName) throws MonitorException{
+  public ZuCluster(ZooKeeperClient zkClient, String clusterId) throws MonitorException{
     assert zkClient != null;
-    assert clusterName != null;
-    lsnrs = Collections.synchronizedList(new LinkedList<ZuClusterEventListener>());
+    assert clusterId != null;
+    listeners = Collections.synchronizedList(new LinkedList<ZuClusterEventListener>());
     
-    if (!clusterName.startsWith("/")){
-      clusterName = "/" + clusterName;
+    if (!clusterId.startsWith("/")){
+      clusterId = "/" + clusterId;
     }
     
-    this.clusterName = clusterName;
     this.zkClient = zkClient;
-    serverSet = new ServerSetImpl(zkClient, clusterName);
+    this.clusterId = clusterId;
+    serverSet = new ServerSetImpl(zkClient, clusterId);
     serverSet.monitor(this);
   }
   
-  public String getClusterName() {
-    return clusterName;
+  public String getclusterId() {
+    return clusterId;
   }
   
   /**
@@ -110,7 +110,7 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
    * @param lsnr cluster listener
    */
   public void addClusterEventListener(ZuClusterEventListener lsnr){
-    lsnrs.add(lsnr);
+    listeners.add(lsnr);
     lsnr.clusterChanged(this.clusterView.get().partMap);
   }
 
@@ -182,22 +182,21 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
     
     for (ServiceInstance si : hostSet){
       
-      Endpoint ep = si.getServiceEndpoint();
+      Endpoint endpoint = si.getServiceEndpoint();
 
-      InetSocketAddress svc = oldView.nodesMap.get(ep);
-      InetSocketAddress sa = new InetSocketAddress(ep.getHost(), ep.getPort());
-      if (svc == null){
+      InetSocketAddress host = oldView.nodesMap.get(endpoint);
+      if (host == null){
         // discovered a new node
-        svc = sa;
+        host = new InetSocketAddress(endpoint.getHost(), endpoint.getPort());
       }
-      newView.nodesMap.put(ep, svc);
+      newView.nodesMap.put(endpoint, host);
       int shardId = si.getShard();
       List<InetSocketAddress> nodeList = newView.partMap.get(shardId);
       if (nodeList == null){
         nodeList = new ArrayList<InetSocketAddress>();
         newView.partMap.put(shardId, nodeList);
       }
-      nodeList.add(svc);
+      nodeList.add(host);
     }
     
  // gather a list of clients that are no longer in the cluster and cleanup
@@ -211,11 +210,11 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
 
     clusterView.set(newView);
     
-    for (ZuClusterEventListener lsnr : lsnrs){
+    for (ZuClusterEventListener lsnr : listeners){
      lsnr.clusterChanged(newView.partMap); 
     }
     
-    for (ZuClusterEventListener lsnr : lsnrs){
+    for (ZuClusterEventListener lsnr : listeners){
       lsnr.nodesRemoved(cleanupList); 
      }
   }
