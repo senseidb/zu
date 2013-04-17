@@ -6,10 +6,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
+
 import zu.core.cluster.ZuCluster;
 import zu.finagle.serialize.ZuSerializer;
 import zu.finagle.server.ZuTransportService.RequestHandler;
 
+import com.google.common.base.Stopwatch;
 import com.twitter.common.zookeeper.Group.JoinException;
 import com.twitter.common.zookeeper.ServerSet.EndpointStatus;
 import com.twitter.common.zookeeper.ServerSet.UpdateException;
@@ -27,6 +30,7 @@ public class ZuFinagleServer{
   private Server server;
   private final Service<byte[], byte[]> svc;
   private int maxConcurrentRequests = DEFAULT_MAX_CONCURRENT_REQUESTS;
+  private final Logger logger = Logger.getLogger(ZuFinagleServer.class);  
   
   public int getMaxConcurrentRequests() {
     return maxConcurrentRequests;
@@ -49,12 +53,15 @@ public class ZuFinagleServer{
   
   
   public void start() {
+   Stopwatch sw = new Stopwatch();
+   sw.start();
     server = ServerBuilder.safeBuild(svc,
         ServerBuilder.get()
         .codec(ThriftServerFramedCodec.get())
         .name(name).maxConcurrentRequests(maxConcurrentRequests)
         .bindTo(addr));
-    
+    sw.stop();
+    logger.info(String.format("building finagle server took %s ms", sw.elapsedMillis()));
   }
   
   public void shutdown(Duration timeout){
