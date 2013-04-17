@@ -67,9 +67,11 @@ public abstract class RoutingAlgorithm<T> implements ZuClusterEventListener{
   public void nodesRemoved(Set<InetSocketAddress> removedNodes) {
     Set<T> set = new HashSet<T>();
     for (InetSocketAddress host : removedNodes) {
+      //addrMap.get() returns null here, as it has been updated and doesn't contain removed hosts
       set.add(addrMap.get(host));
     }
-    socketDecorator.cleanup(set);
+    //commented out as it causes NPE inside cleanup  
+    //socketDecorator.cleanup(set);
   }
 
   public void updateCluster(Map<Integer,ArrayList<T>> clusterView){
