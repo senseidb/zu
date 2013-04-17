@@ -13,6 +13,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.log4j.Logger;
+
 import com.google.common.collect.ImmutableSet;
 import com.twitter.common.net.pool.DynamicHostSet.HostChangeMonitor;
 import com.twitter.common.net.pool.DynamicHostSet.MonitorException;
@@ -40,6 +42,7 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
   private final List<ZuClusterEventListener> listeners;
   private final String clusterId;
   private final ZooKeeperClient zkClient;
+  private final Logger logger = Logger.getLogger(ZuCluster.class);
   
   private static class NodeClusterView{
     Map<Endpoint,InetSocketAddress> nodesMap = new HashMap<Endpoint,InetSocketAddress>();
@@ -210,13 +213,21 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
 
     clusterView.set(newView);
     
-    for (ZuClusterEventListener lsnr : listeners){
-     lsnr.clusterChanged(newView.partMap); 
+    for (ZuClusterEventListener lsnr : listeners) {
+      try {
+        lsnr.clusterChanged(newView.partMap);
+      } catch (Exception e) {
+        logger.error("caught an exception while notifying a listener " + lsnr, e);
+      }
     }
-    
-    for (ZuClusterEventListener lsnr : listeners){
-      lsnr.nodesRemoved(cleanupList); 
-     }
+
+    for (ZuClusterEventListener lsnr : listeners) {
+      try {
+        lsnr.nodesRemoved(cleanupList);
+      } catch (Exception e) {
+        logger.error("caught an exception while notifying a listener " + lsnr, e);
+      }
+    }
   }
   
   /**
