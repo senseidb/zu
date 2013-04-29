@@ -50,7 +50,13 @@ public class ZuFinagleServer{
     this.server = null;
     this.svc = svc;
   }
-  
+
+  public ZuFinagleServer(String name, InetSocketAddress addr, Service<byte[], byte[]> svc) {
+    this.addr = addr;
+    this.name = name;
+    this.server = null;
+    this.svc = svc;
+  }
   
   public void start() {
    Stopwatch sw = new Stopwatch();

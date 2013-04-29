@@ -44,7 +44,7 @@ public class ZuFinagleServiceDecorator<Req, Res> implements InetSocketAddressDec
     .requestTimeout(timeout)
     .hostConnectionLimit(numThreads));
     sw.stop();
-    logger.info(String.format("building finagle client took %s ms", sw.elapsedMillis()));//why does it take 5 seconds sometimes?
+    logger.info(String.format("building finagle client took %s ms", sw.elapsedMillis()));
     return svc.wrap(client);
   }
 
