@@ -66,7 +66,7 @@ public class ConsistentHashRoutingAlgorithm<T> extends RoutingAlgorithm<T> {
       tmpMap.put(partition, circle);
       for (T newNode : entry.getValue()){
         for (int count = 0; count < numberOfReplicas; ++count){
-          String key = newNode.toString() + count;
+          String key = "" + newNode.hashCode() + count;
           circle.put((int)hashProvider.hash(key.getBytes()), newNode);
         }
       }
