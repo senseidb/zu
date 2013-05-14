@@ -145,10 +145,10 @@ public abstract class ZuClusterTestBase extends BaseZooKeeperTest {
       };
     }
     else {      
-      clientProxy = new ZuTransportClientProxy<>(ReqServiceImpl.SVC, ReqServiceImpl.serializer);
+      clientProxy = new ZuTransportClientProxy(ReqServiceImpl.SVC, ReqServiceImpl.serializer);
     }
     
-    routingAlgorithm = new RoutingAlgorithm.RandomAlgorithm<>(new ZuFinagleServiceDecorator<Req2, Resp2>(clientProxy));
+    routingAlgorithm = new RoutingAlgorithm.RandomAlgorithm(new ZuFinagleServiceDecorator<Req2, Resp2>(clientProxy));
    
     cluster.addClusterEventListener(routingAlgorithm);
     

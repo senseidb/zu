@@ -60,7 +60,7 @@ public class ZuFinagleTest extends BaseZooKeeperTest{
     Service<Req, Resp> svc = null;
     try {
       ZuClientFinagleServiceBuilder<Req, Resp> builder = new ZuClientFinagleServiceBuilder<Req, Resp>();
-      ZuTransportClientProxy<Req, Resp> clientProxy = new ZuTransportClientProxy<>(TestHandler.SVC, TestHandler.serializer);
+      ZuTransportClientProxy<Req, Resp> clientProxy = new ZuTransportClientProxy(TestHandler.SVC, TestHandler.serializer);
       svc = builder.clientProxy(clientProxy).host(new InetSocketAddress(port)).build();
       
       String s = "zu finagle test string";

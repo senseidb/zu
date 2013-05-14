@@ -44,7 +44,7 @@ public class ZuFinagleClusterTest extends ZuClusterTestBase {
       
       broker.start();
       
-      ZuTransportClientProxy<Req2, Resp2> brokerClientProxy = new ZuTransportClientProxy<>(ReqServiceImpl.SVC, ReqServiceImpl.serializer);
+      ZuTransportClientProxy<Req2, Resp2> brokerClientProxy = new ZuTransportClientProxy(ReqServiceImpl.SVC, ReqServiceImpl.serializer);
       
       Service<Req2, Resp2> brokerClient = new ZuFinagleServiceDecorator<Req2, Resp2>(brokerClientProxy).decorate(new InetSocketAddress(brokerPort));
       
