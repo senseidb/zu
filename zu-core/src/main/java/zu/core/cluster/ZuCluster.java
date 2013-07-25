@@ -92,7 +92,7 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
   public ZuCluster(ZooKeeperClient zkClient, String clusterId) throws MonitorException{
     assert zkClient != null;
     assert clusterId != null;
-    listeners = Collections.synchronizedList(new LinkedList<ZuClusterEventListener>());
+    listeners = new LinkedList<ZuClusterEventListener>();
     
     if (!clusterId.startsWith("/")){
       clusterId = "/" + clusterId;
@@ -113,8 +113,10 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
    * @param lsnr cluster listener
    */
   public void addClusterEventListener(ZuClusterEventListener lsnr){
-    listeners.add(lsnr);
-    lsnr.clusterChanged(this.clusterView.get().partMap);
+    synchronized(listeners) {
+      listeners.add(lsnr);
+      lsnr.clusterChanged(this.clusterView.get().partMap);
+    }
   }
 
   /**
@@ -213,19 +215,21 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
 
     clusterView.set(newView);
     
-    for (ZuClusterEventListener lsnr : listeners) {
-      try {
-        lsnr.clusterChanged(newView.partMap);
-      } catch (Exception e) {
-        logger.error("caught an exception while notifying a listener " + lsnr, e);
+    synchronized(listeners) {
+      for (ZuClusterEventListener lsnr : listeners) {
+        try {
+          lsnr.clusterChanged(newView.partMap);
+        } catch (Exception e) {
+          logger.error("caught an exception while notifying a listener " + lsnr, e);
+        }
       }
-    }
 
-    for (ZuClusterEventListener lsnr : listeners) {
-      try {
-        lsnr.nodesRemoved(cleanupList);
-      } catch (Exception e) {
-        logger.error("caught an exception while notifying a listener " + lsnr, e);
+      for (ZuClusterEventListener lsnr : listeners) {
+        try {
+          lsnr.nodesRemoved(cleanupList);
+        } catch (Exception e) {
+          logger.error("caught an exception while notifying a listener " + lsnr, e);
+        }
       }
     }
   }
