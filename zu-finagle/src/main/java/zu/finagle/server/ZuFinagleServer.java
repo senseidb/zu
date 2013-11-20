@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
+import org.apache.thrift.protocol.TCompactProtocol;
 
 import zu.core.cluster.ZuCluster;
 import zu.finagle.serialize.ZuSerializer;
@@ -16,6 +17,7 @@ import com.google.common.base.Stopwatch;
 import com.twitter.common.zookeeper.Group.JoinException;
 import com.twitter.common.zookeeper.ServerSet.EndpointStatus;
 import com.twitter.common.zookeeper.ServerSet.UpdateException;
+import com.twitter.finagle.ServerCodecConfig;
 import com.twitter.finagle.Service;
 import com.twitter.finagle.builder.Server;
 import com.twitter.finagle.builder.ServerBuilder;
@@ -61,9 +63,13 @@ public class ZuFinagleServer{
   public void start() {
    Stopwatch sw = new Stopwatch();
    sw.start();
+   
+   ServerCodecConfig codeConfig = new ServerCodecConfig(name, addr);
+   ThriftServerFramedCodec codec = new ThriftServerFramedCodec(codeConfig, new TCompactProtocol.Factory());
+   
     server = ServerBuilder.safeBuild(svc,
         ServerBuilder.get()
-        .codec(ThriftServerFramedCodec.get())
+        .codec(codec)
         .name(name).maxConcurrentRequests(maxConcurrentRequests)
         .bindTo(addr));
     sw.stop();

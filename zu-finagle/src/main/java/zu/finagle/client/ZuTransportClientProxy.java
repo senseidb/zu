@@ -2,7 +2,7 @@ package zu.finagle.client;
 
 import java.io.IOException;
 
-import org.apache.thrift.protocol.TBinaryProtocol;
+import org.apache.thrift.protocol.TCompactProtocol;
 
 import scala.runtime.AbstractFunction1;
 import scala.runtime.BoxedUnit;
@@ -27,7 +27,7 @@ public class ZuTransportClientProxy<Req, Resp> implements ZuClientProxy<Req, Res
 
   @Override
   public Service<Req, Resp> wrap(final Service<ThriftClientRequest, byte[]> client) {
-    final ZuThriftService.ServiceIface svc = new ZuThriftService.ServiceToClient(client, new TBinaryProtocol.Factory());
+    final ZuThriftService.ServiceIface svc = new ZuThriftService.ServiceToClient(client, new TCompactProtocol.Factory());
     return new Service<Req, Resp>() {
       @Override
       public Future<BoxedUnit> close(Time deadline) {

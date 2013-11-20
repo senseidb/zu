@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
-import org.apache.thrift.protocol.TBinaryProtocol;
+import org.apache.thrift.protocol.TCompactProtocol;
 import org.junit.After;
 import org.junit.Before;
 
@@ -51,7 +51,7 @@ public abstract class ZuClusterTestBase extends BaseZooKeeperTest {
   };
   
   public static ZuFinagleServer buildFinagleServiceServer(int port, ReqServiceImpl svcImpl) {
-    Service<byte[], byte[]> svc = new ReqService.Service(svcImpl, new TBinaryProtocol.Factory());
+    Service<byte[], byte[]> svc = new ReqService.Service(svcImpl, new TCompactProtocol.Factory());
     return new ZuFinagleServer(port, svc);
   }
   
@@ -127,7 +127,7 @@ public abstract class ZuClusterTestBase extends BaseZooKeeperTest {
         
         @Override
         public Service<Req2, Resp2> wrap(final Service<ThriftClientRequest, byte[]> client) {
-          final ReqService.ServiceIface svcIface =  new ReqService.ServiceToClient(client, new TBinaryProtocol.Factory());
+          final ReqService.ServiceIface svcIface =  new ReqService.ServiceToClient(client, new TCompactProtocol.Factory());
           return new Service<Req2, Resp2>() {
 
             @Override

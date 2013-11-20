@@ -15,8 +15,8 @@ public class ThriftSerializer<Req extends TBase<?,?>, Res extends TBase<?,?>> im
   private final ThriftCodec<Res> resCodec;
   
   public ThriftSerializer(Class<Req> reqClass, Class<Res> resClass) {
-    reqCodec = ThriftCodec.create(reqClass, ThriftCodec.BINARY_PROTOCOL);
-    resCodec = ThriftCodec.create(resClass, ThriftCodec.BINARY_PROTOCOL);
+    reqCodec = ThriftCodec.create(reqClass, ThriftCodec.COMPACT_PROTOCOL);
+    resCodec = ThriftCodec.create(resClass, ThriftCodec.COMPACT_PROTOCOL);
   }
   
   @Override

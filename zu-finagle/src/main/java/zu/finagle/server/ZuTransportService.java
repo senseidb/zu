@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.thrift.protocol.TBinaryProtocol;
+import org.apache.thrift.protocol.TCompactProtocol;
 
 import zu.finagle.rpc.ZuThriftService;
 import zu.finagle.rpc.ZuTransport;
@@ -56,6 +56,6 @@ public class ZuTransportService implements ZuThriftService.ServiceIface{
   }
   
   public Service<byte[], byte[]> getService() {
-    return new ZuThriftService.Service(this, new TBinaryProtocol.Factory());
+    return new ZuThriftService.Service(this, new TCompactProtocol.Factory());
   }
 }

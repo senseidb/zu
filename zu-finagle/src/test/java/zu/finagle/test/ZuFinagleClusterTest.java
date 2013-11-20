@@ -6,7 +6,7 @@ import java.util.HashSet;
 
 import junit.framework.TestCase;
 
-import org.apache.thrift.protocol.TBinaryProtocol;
+import org.apache.thrift.protocol.TCompactProtocol;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -17,7 +17,9 @@ import zu.finagle.server.ZuFinagleServer;
 
 import com.twitter.finagle.Service;
 import com.twitter.finagle.builder.ClientBuilder;
+import com.twitter.finagle.thrift.ClientId;
 import com.twitter.finagle.thrift.ThriftClientFramedCodec;
+import com.twitter.finagle.thrift.ThriftClientFramedCodecFactory;
 import com.twitter.finagle.thrift.ThriftClientRequest;
 import com.twitter.util.Future;
 
@@ -77,19 +79,22 @@ public class ZuFinagleClusterTest extends ZuClusterTestBase {
         
       };
       
-      Service<byte[],byte[]> brokerSvc = new ReqService.Service(svcImpl, new TBinaryProtocol.Factory());
+      Service<byte[],byte[]> brokerSvc = new ReqService.Service(svcImpl, new TCompactProtocol.Factory());
       
       
       broker = new ZuFinagleServer(brokerPort, brokerSvc);
       
       broker.start();
       
+ 
+      ThriftClientFramedCodecFactory codec = new ThriftClientFramedCodecFactory(ClientId.current(), false, new TCompactProtocol.Factory());
+      
       Service<ThriftClientRequest, byte[]> client = ClientBuilder.safeBuild(ClientBuilder.get()
           .hosts(new InetSocketAddress(brokerPort))
-          .codec(ThriftClientFramedCodec.get())
+          .codec(codec)
           .hostConnectionLimit(ZuClientFinagleServiceBuilder.DEFAULT_NUM_THREADS));
       
-      ReqService.ServiceIface brokerClient = new ReqService.ServiceToClient(client, new TBinaryProtocol.Factory());
+      ReqService.ServiceIface brokerClient = new ReqService.ServiceToClient(client, new TCompactProtocol.Factory());
       
       Future<Resp2> future  = brokerClient.handle(new Req2());
       Resp2 merged = future.apply();
