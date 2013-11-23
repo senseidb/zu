@@ -4,7 +4,7 @@
 	<groupId>com.senseidb.zu</groupId>
 	<artifactId>zu-project</artifactId>
 	<packaging>pom</packaging>
-	<version>0.0.1</version>
+	<version>0.0.2-SNAPSHOT</version>
 	<description>cluster manager</description>
 
 	<parent>
