@@ -23,13 +23,14 @@ public abstract class RoutingAlgorithm<T> implements ZuClusterEventListener{
   private volatile Set<Integer> shards = null;
   private final InetSocketAddressDecorator<T> socketDecorator;
   private volatile Map<InetSocketAddress, T> addrMap = new HashMap<InetSocketAddress, T>();
-  
+  private volatile Map<T, InetSocketAddress> serviceMap = new HashMap<T, InetSocketAddress>();
+
   public RoutingAlgorithm(InetSocketAddressDecorator<T> socketDecorator) {
     this.socketDecorator = socketDecorator;
   }
-  
+
   public abstract T route(byte[] key, int shard);
-  
+
   public Set<Integer> getShards() {
     return shards == null ? new HashSet<Integer>() : shards;
   }
@@ -38,7 +39,8 @@ public abstract class RoutingAlgorithm<T> implements ZuClusterEventListener{
     shards = view.keySet();
     Map<Integer, ArrayList<T>> clusterView = new HashMap<Integer, ArrayList<T>>();
     Map<InetSocketAddress, T> newAddrMap = new HashMap<InetSocketAddress, T>();
-    
+    Map<T, InetSocketAddress> newServiceMap = new HashMap<T, InetSocketAddress>();
+
     for (Entry<Integer,List<InetSocketAddress>> entry : view.entrySet()) {
       Integer key = entry.getKey();
       List<InetSocketAddress> value = entry.getValue();
@@ -52,40 +54,39 @@ public abstract class RoutingAlgorithm<T> implements ZuClusterEventListener{
           elem = socketDecorator.decorate(addr);
           if (elem != null) {
             newAddrMap.put(addr, elem);
+            newServiceMap.put(elem, addr);
           }
         }
         list.add(elem);
       }
       clusterView.put(key, list);
     }
-    
+
     updateCluster(clusterView);
     addrMap = newAddrMap;
+    serviceMap = newServiceMap;
   }
-  
+
   @Override
   public void nodesRemoved(Set<InetSocketAddress> removedNodes) {
-    Set<T> set = new HashSet<T>();
-    for (InetSocketAddress host : removedNodes) {
-      //addrMap.get() returns null here, as it has been updated and doesn't contain removed hosts
-      set.add(addrMap.get(host));
-    }
-    //commented out as it causes NPE inside cleanup  
-    //socketDecorator.cleanup(set);
   }
 
   public void updateCluster(Map<Integer,ArrayList<T>> clusterView){
     this.clusterView = clusterView;
   }
 
+  public InetSocketAddress getServiceAddress(T service) {
+    return serviceMap.get(service);
+  }
+
   public static class RandomAlgorithm<T> extends RoutingAlgorithm<T> {
-    private Random rand = new Random();
-    
-    
+    private final Random rand = new Random();
+
+
     public RandomAlgorithm(InetSocketAddressDecorator<T> socketDecorator){
       super(socketDecorator);
     }
-    
+
     @Override
     public T route(byte[] key, int partition) {
       if (clusterView == null) return null;
@@ -94,14 +95,14 @@ public abstract class RoutingAlgorithm<T> implements ZuClusterEventListener{
       return nodes.get(rand.nextInt(nodes.size()));
     }
   }
-  
+
   public static class RoundRobinAlgorithm<T> extends RoutingAlgorithm<T> {
     private final Map<Integer,AtomicLong> countMap = Collections.synchronizedMap(new HashMap<Integer,AtomicLong>());
-    
+
     public RoundRobinAlgorithm(InetSocketAddressDecorator<T> socketDecorator){
       super(socketDecorator);
     }
-    
+
     @Override
     public T route(byte[] key, int partition) {
       if (clusterView == null) {
@@ -118,7 +119,7 @@ public abstract class RoutingAlgorithm<T> implements ZuClusterEventListener{
       else{
         idxVal = idx.incrementAndGet();
       }
-      return nodes.get((int)(idxVal % (long)nodes.size()));
+      return nodes.get((int)(idxVal % nodes.size()));
     }
   }
 }
