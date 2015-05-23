@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>com.senseidb.zu</groupId>
 		<artifactId>zu-project</artifactId>
-		<version>0.0.2-SNAPSHOT</version>
+		<version>0.0.3-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
@@ -54,7 +54,7 @@
 		<dependency>
 			<groupId>com.twitter.common.zookeeper</groupId>
 			<artifactId>server-set</artifactId>
-			<version>1.0.31</version>
+			<version>1.0.103</version>
 			<exclusions>
 				<exclusion>
 					<groupId>javax.jms</groupId>
@@ -73,7 +73,7 @@
 		<dependency>
 			<groupId>com.twitter.common</groupId>
 			<artifactId>zookeeper-testing</artifactId>
-			<version>0.0.30</version>
+			<version>0.0.51</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

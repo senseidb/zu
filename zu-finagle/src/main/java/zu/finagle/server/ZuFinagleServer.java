@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 import org.apache.thrift.protocol.TCompactProtocol;
@@ -73,7 +74,7 @@ public class ZuFinagleServer{
         .name(name).maxConcurrentRequests(maxConcurrentRequests)
         .bindTo(addr));
     sw.stop();
-    logger.info(String.format("building finagle server took %s ms", sw.elapsedMillis()));
+    logger.info(String.format("building finagle server took %s ms", sw.elapsed(TimeUnit.MILLISECONDS)));
   }
   
   public void shutdown(Duration timeout){

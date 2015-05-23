@@ -2,6 +2,7 @@ package zu.finagle.client;
 
 import java.net.InetSocketAddress;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 import org.apache.thrift.protocol.TCompactProtocol;
@@ -49,7 +50,7 @@ public class ZuFinagleServiceDecorator<Req, Res> implements InetSocketAddressDec
     .requestTimeout(timeout)
     .hostConnectionLimit(numThreads));
     sw.stop();
-    logger.info(String.format("building finagle client took %s ms", sw.elapsedMillis()));
+    logger.info(String.format("building finagle client took %s ms", sw.elapsed(TimeUnit.MILLISECONDS)));
     return svc.wrap(client);
   }
 
