@@ -108,7 +108,7 @@ public abstract class RoutingAlgorithm<T> implements ZuClusterEventListener{
         return null;
       }
       ArrayList<T> nodes = clusterView.get(partition);
-      if (nodes.isEmpty()) return null;
+      if (nodes == null || nodes.isEmpty()) return null;
       AtomicLong idx = countMap.get(partition);
       long idxVal = 0;
       if (idx == null){
