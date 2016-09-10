@@ -4,8 +4,9 @@ import java.net.InetSocketAddress;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
 import org.apache.thrift.protocol.TCompactProtocol;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import scala.runtime.BoxedUnit;
 import zu.core.cluster.routing.InetSocketAddressDecorator;
@@ -20,10 +21,10 @@ import com.twitter.util.Duration;
 import com.twitter.util.Future;
 
 public class ZuFinagleServiceDecorator<Req, Res> implements InetSocketAddressDecorator<Service<Req,Res>>{
+  private static final Logger logger = LoggerFactory.getLogger(ZuFinagleServiceDecorator.class);
   private final Duration timeout;
   private final int numThreads;
   private final ZuClientProxy<Req, Res> svc;
-  private final Logger logger = Logger.getLogger(ZuFinagleServiceDecorator.class);
   
   public ZuFinagleServiceDecorator(ZuClientProxy<Req, Res> svc) {
     this(svc, ZuClientFinagleServiceBuilder.DEFAULT_TIMEOUT_DURATION, ZuClientFinagleServiceBuilder.DEFAULT_NUM_THREADS);
@@ -59,7 +60,11 @@ public class ZuFinagleServiceDecorator<Req, Res> implements InetSocketAddressDec
     for (Service<Req,Res> svc : toBeClosed) {
       Future<BoxedUnit> closeFuture = svc.close();
       if (closeFuture != null) {
-        closeFuture.apply();
+        try {
+          closeFuture.toJavaFuture().get();
+        } catch (Exception e) {
+          logger.error("problem closing.", e);
+        }
       }
     }
   }

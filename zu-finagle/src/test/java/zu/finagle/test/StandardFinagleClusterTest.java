@@ -34,7 +34,6 @@ import com.twitter.common.zookeeper.testing.BaseZooKeeperTest;
 import com.twitter.finagle.Service;
 import com.twitter.finagle.builder.ClientBuilder;
 import com.twitter.finagle.thrift.ClientId;
-import com.twitter.finagle.thrift.ThriftClientFramedCodec;
 import com.twitter.finagle.thrift.ThriftClientFramedCodecFactory;
 import com.twitter.finagle.thrift.ThriftClientRequest;
 import com.twitter.util.Duration;
@@ -110,8 +109,13 @@ public class StandardFinagleClusterTest extends BaseZooKeeperTest{
         
         // gather all the results from each shard
         for (Entry<Integer, Future<Resp2>> entry : futureList.entrySet()) {
-          Resp2 result = entry.getValue().apply(partialResultTimeout);
-          resList.put(entry.getKey(), result);
+          Resp2 result;
+          try {
+            result = entry.getValue().toJavaFuture().get(partialResultTimeout.inMillis(), TimeUnit.MILLISECONDS);
+            resList.put(entry.getKey(), result);
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          }
         }
         
         // return the merged result
@@ -187,7 +191,7 @@ public class StandardFinagleClusterTest extends BaseZooKeeperTest{
   public void testBrokerService() throws Exception {
     ReqService.ServiceIface brokerSvc = buildBrokerService(routingAlgorithm, ZuClusterTestBase.scatterGather);
     Future<Resp2> future  = brokerSvc.handle(new Req2());
-    Resp2 merged = future.apply();
+    Resp2 merged = future.toJavaFuture().get();
     TestCase.assertEquals(new HashSet<Integer>(Arrays.asList(0,1,2,3)), merged.getVals());
   }
   
@@ -213,9 +217,8 @@ public class StandardFinagleClusterTest extends BaseZooKeeperTest{
       ReqService.ServiceIface brokerClient = clientServiceBuilder.decorate(brokerAddr);
       
       Future<Resp2> future  = brokerClient.handle(new Req2());
-      Resp2 merged = future.apply();
-      TestCase.assertEquals(new HashSet<Integer>(Arrays.asList(0,1,2,3)), merged.getVals());
-      
+      Resp2 merged = future.toJavaFuture().get();
+      TestCase.assertEquals(new HashSet<Integer>(Arrays.asList(0,1,2,3)), merged.getVals());      
     }
     finally {
       if (broker != null) {

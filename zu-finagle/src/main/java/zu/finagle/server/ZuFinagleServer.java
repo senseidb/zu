@@ -7,8 +7,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
 import org.apache.thrift.protocol.TCompactProtocol;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import zu.core.cluster.ZuCluster;
 import zu.finagle.serialize.ZuSerializer;
@@ -33,7 +34,7 @@ public class ZuFinagleServer{
   private Server server;
   private final Service<byte[], byte[]> svc;
   private int maxConcurrentRequests = DEFAULT_MAX_CONCURRENT_REQUESTS;
-  private final Logger logger = Logger.getLogger(ZuFinagleServer.class);  
+  private static final Logger logger = LoggerFactory.getLogger(ZuFinagleServer.class);  
   
   public int getMaxConcurrentRequests() {
     return maxConcurrentRequests;
@@ -80,11 +81,15 @@ public class ZuFinagleServer{
   public void shutdown(Duration timeout){
     if (server != null) {
       Future<?> future = server.close();
-      if (timeout != null) {
-        future.apply(timeout);
-      }
-      else {
-        future.apply();
+      try {
+        if (timeout != null) {
+          future.toJavaFuture().get(timeout.inMillis(), TimeUnit.MILLISECONDS);
+        }
+        else {
+          future.toJavaFuture().get();
+        }
+      } catch(Exception e) {
+        logger.error("problem shutting down", e);
       }
     }
   }
@@ -125,7 +130,12 @@ public class ZuFinagleServer{
 
       @Override
       public Res handleRequest(Req req) {
-        return svc.apply(req).apply();
+        try {
+          return svc.apply(req).toJavaFuture().get();
+        } catch (Exception e) {
+          logger.error("error: ", e);
+          return null;
+        }
       }
 
       @Override

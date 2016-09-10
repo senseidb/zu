@@ -48,7 +48,7 @@ public class ZuFinagleTest extends BaseZooKeeperTest{
   
   @Test
   @SuppressWarnings("unchecked")
-  public void testBasic() {
+  public void testBasic() throws Exception {
     int port = 6100;
     
     ZuTransportService zuSvc = new ZuTransportService();
@@ -68,19 +68,19 @@ public class ZuFinagleTest extends BaseZooKeeperTest{
       req.setS(s);
       Future<Resp> lenFuture = svc.apply(req);
       
-      Resp resp = lenFuture.apply();
+      Resp resp = lenFuture.toJavaFuture().get();
       
       TestCase.assertEquals(s.length(), resp.getLen());
       
       req = new Req();
       lenFuture = svc.apply(req);
       
-      resp = lenFuture.apply();
+      resp = lenFuture.toJavaFuture().get();
       
       TestCase.assertEquals(0, resp.getLen());
     }
     finally {
-      svc.close().apply();
+      svc.close().toJavaFuture().get();
       server.shutdown();
     }
   }

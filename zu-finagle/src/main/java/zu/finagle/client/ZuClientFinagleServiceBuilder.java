@@ -7,6 +7,9 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import zu.core.cluster.routing.RoutingAlgorithm;
 import zu.core.cluster.routing.ZuScatterGatherer;
 
@@ -16,7 +19,7 @@ import com.twitter.util.Future;
 
 
 public final class ZuClientFinagleServiceBuilder<Req, Res>{
-  
+  private static final Logger logger = LoggerFactory.getLogger(ZuClientFinagleServiceBuilder.class);
   public static final int DEFAULT_NUM_THREADS = 8;  // default thread count
   public static final Duration DEFAULT_PARTIAL_TIMEOUT_DURATION = Duration.apply(10, TimeUnit.SECONDS);
   public static final Duration DEFAULT_TIMEOUT_DURATION = Duration.apply(10, TimeUnit.SECONDS);
@@ -105,11 +108,15 @@ public final class ZuClientFinagleServiceBuilder<Req, Res>{
           }
         }
         
-        Map<Integer, Res> resList = new HashMap<Integer,Res>();
-        
-        for (Entry<Integer, Future<Res>> entry : futureList.entrySet()) {
-          Res result = entry.getValue().apply(partialResultTimeout);
-          resList.put(entry.getKey(), result);
+        Map<Integer, Res> resList = new HashMap<Integer,Res>();        
+        for (Entry<Integer, Future<Res>> entry : futureList.entrySet()) {          
+          try {
+            Res result = entry.getValue().toJavaFuture().get(
+                partialResultTimeout.inSeconds(), TimeUnit.SECONDS);
+            resList.put(entry.getKey(), result);
+          } catch (Exception e) {
+            logger.error("problem scattering:", e);
+          }
         }
         
         return  Future.value(scatterGather.merge(resList));

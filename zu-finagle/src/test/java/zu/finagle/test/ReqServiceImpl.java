@@ -2,6 +2,7 @@ package zu.finagle.test;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import zu.finagle.serialize.JOSSSerializer;
 import zu.finagle.serialize.ZuSerializer;
@@ -33,7 +34,11 @@ public class ReqServiceImpl implements ZuTransportService.RequestHandler<Req2, R
   @Override
   public Resp2 handleRequest(Req2 req) {
     Future<Resp2> future = handle(req);
-    return future.apply();
+    try {
+      return future.toJavaFuture().get();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override

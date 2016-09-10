@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>com.senseidb.zu</groupId>
 		<artifactId>zu-project</artifactId>
-		<version>0.0.3-SNAPSHOT</version>
+		<version>0.0.4-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
@@ -54,28 +54,33 @@
 		<dependency>
 			<groupId>com.senseidb.zu</groupId>
 			<artifactId>zu-core</artifactId>
-			<version>0.0.3-SNAPSHOT</version>
+			<version>0.0.4-SNAPSHOT</version>
 		</dependency>
 	    <dependency>
             <groupId>com.twitter</groupId>
             <artifactId>finagle-serversets_2.11</artifactId>
-            <version>6.25.0</version>
+            <version>6.38.0</version>
         </dependency>
 		<dependency>
 			<groupId>com.twitter.common</groupId>
 			<artifactId>zookeeper-testing</artifactId>
-			<version>0.0.51</version>
+			<version>0.0.53</version>
 			<scope>test</scope>
 		</dependency>		
 		<dependency>
 			<groupId>com.twitter</groupId>
             <artifactId>finagle-http_2.11</artifactId>
-            <version>6.25.0</version>
+            <version>6.38.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.twitter</groupId>
             <artifactId>finagle-thrift_2.11</artifactId>
-            <version>6.25.0</version>
+            <version>6.38.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>1.7.5</version>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>

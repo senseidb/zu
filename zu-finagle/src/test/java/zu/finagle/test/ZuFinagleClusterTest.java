@@ -18,7 +18,6 @@ import zu.finagle.server.ZuFinagleServer;
 import com.twitter.finagle.Service;
 import com.twitter.finagle.builder.ClientBuilder;
 import com.twitter.finagle.thrift.ClientId;
-import com.twitter.finagle.thrift.ThriftClientFramedCodec;
 import com.twitter.finagle.thrift.ThriftClientFramedCodecFactory;
 import com.twitter.finagle.thrift.ThriftClientRequest;
 import com.twitter.util.Future;
@@ -51,7 +50,7 @@ public class ZuFinagleClusterTest extends ZuClusterTestBase {
       Service<Req2, Resp2> brokerClient = new ZuFinagleServiceDecorator<Req2, Resp2>(brokerClientProxy).decorate(new InetSocketAddress(brokerPort));
       
       Future<Resp2> future  = brokerClient.apply(new Req2());
-      Resp2 merged = future.apply();
+      Resp2 merged = future.toJavaFuture().get();
       TestCase.assertEquals(new HashSet<Integer>(Arrays.asList(0,1,2,3)), merged.getVals());
       
       brokerClient.close(); 
@@ -97,7 +96,7 @@ public class ZuFinagleClusterTest extends ZuClusterTestBase {
       ReqService.ServiceIface brokerClient = new ReqService.ServiceToClient(client, new TCompactProtocol.Factory());
       
       Future<Resp2> future  = brokerClient.handle(new Req2());
-      Resp2 merged = future.apply();
+      Resp2 merged = future.toJavaFuture().get();
       TestCase.assertEquals(new HashSet<Integer>(Arrays.asList(0,1,2,3)), merged.getVals());
       
       client.close();
@@ -113,7 +112,7 @@ public class ZuFinagleClusterTest extends ZuClusterTestBase {
   @Test
   public void testScatterGather() throws Exception {
     Future<Resp2> future = svc.apply(new Req2());
-    Resp2 merged = future.apply();
+    Resp2 merged = future.toJavaFuture().get();
     TestCase.assertEquals(new HashSet<Integer>(Arrays.asList(0,1,2,3)), merged.getVals());
   }
 

@@ -26,7 +26,7 @@ public class ZuTransportClusterTest extends ZuClusterTestBase {
     Service<Req2, Resp2> svc = builder.scatterGather(scatterGather).routingAlgorithm(routingAlgorithm).build();
       
     Future<Resp2> future = svc.apply(new Req2());
-    Resp2 merged = future.apply();
+    Resp2 merged = future.toJavaFuture().get();
     TestCase.assertEquals(new HashSet<Integer>(Arrays.asList(0,1,2,3)), merged.getVals());
   }
 }
