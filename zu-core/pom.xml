@@ -52,10 +52,10 @@
 
 	<dependencies>
 		<dependency>
-		    <groupId>com.twitter</groupId>
-		    <artifactId>finagle-serversets_2.11</artifactId>
-		    <version>6.38.0</version>
-		</dependency>
+            <groupId>com.twitter.common.zookeeper</groupId>
+            <artifactId>server-set</artifactId>
+            <version>1.0.103</version>
+        </dependency>
 		<dependency>
 			<groupId>com.twitter.common</groupId>
 			<artifactId>zookeeper-testing</artifactId>
