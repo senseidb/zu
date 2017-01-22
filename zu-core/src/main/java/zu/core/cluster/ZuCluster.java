@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
+import org.apache.zookeeper.ZooKeeper;
 
 import com.google.common.collect.ImmutableSet;
 import com.twitter.common.net.pool.DynamicHostSet.HostChangeMonitor;
@@ -102,6 +103,11 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
     this.clusterId = clusterId;
     serverSet = new ServerSetImpl(zkClient, clusterId);
     serverSet.monitor(this);
+  }
+  
+  public List<String> getAvailableClusters(String clusterPrefix) throws Exception {
+    ZooKeeper zk = zkClient.get();
+    return zk.getChildren(clusterPrefix, false);
   }
   
   public String getClusterId() {
