@@ -58,7 +58,7 @@ public class ZuTest extends BaseZooKeeperTest{
   @Test
   public void testBasic() throws Exception{
     ZooKeeperClient zkClient = createZkClient();
-    ZuCluster mockCluster = new ZuCluster(zkClient, "/core/test1");
+    ZuCluster mockCluster = new ZuCluster(zkClient, "/core/test1", true);
     
     InetSocketAddress s1 = new InetSocketAddress(1);
     
@@ -102,7 +102,7 @@ public class ZuTest extends BaseZooKeeperTest{
   public void testAllNodesJoined() throws Exception{
     
     ZooKeeperClient zkClient = createZkClient();
-    ZuCluster mockCluster = new ZuCluster(zkClient, "/core/test2");
+    ZuCluster mockCluster = new ZuCluster(zkClient, "/core/test2", true);
     
     InetSocketAddress s1 = new InetSocketAddress(1);
     InetSocketAddress s2 = new InetSocketAddress(2);

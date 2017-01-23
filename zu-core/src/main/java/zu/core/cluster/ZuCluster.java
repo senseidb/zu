@@ -43,6 +43,7 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
   private final List<ZuClusterEventListener> listeners;
   private final String clusterId;
   private final ZooKeeperClient zkClient;
+  private final boolean closeOnShutdown;
   private final Logger logger = Logger.getLogger(ZuCluster.class);
   
   private static class NodeClusterView{
@@ -82,7 +83,7 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
    */
   public ZuCluster(Iterable<InetSocketAddress> zookeeperAddrs, String clusterId,
       int timeout) throws MonitorException{
-    this(new ZooKeeperClient(Amount.of(timeout, Time.SECONDS), Credentials.NONE, zookeeperAddrs), clusterId);
+    this(new ZooKeeperClient(Amount.of(timeout, Time.SECONDS), Credentials.NONE, zookeeperAddrs), clusterId, true);
   }
   
   /**
@@ -90,7 +91,7 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
    * @param clusterId name of the cluster
    * @throws MonitorException
    */
-  public ZuCluster(ZooKeeperClient zkClient, String clusterId) throws MonitorException{
+  public ZuCluster(ZooKeeperClient zkClient, String clusterId, boolean closeOnShutdown) throws MonitorException{
     assert zkClient != null;
     assert clusterId != null;
     listeners = new LinkedList<ZuClusterEventListener>();
@@ -101,6 +102,7 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
     
     this.zkClient = zkClient;
     this.clusterId = clusterId;
+    this.closeOnShutdown = closeOnShutdown;
     serverSet = new ServerSetImpl(zkClient, clusterId);
     serverSet.monitor(this);
   }
@@ -243,8 +245,8 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
   /**
    * shuts down the cluster and closes connection to zookeeper
    */
-  public void shutdown() {
-    if (zkClient != null) {
+  public void shutdown() {    
+    if (closeOnShutdown && zkClient != null) {
       zkClient.close();
     }
   }
