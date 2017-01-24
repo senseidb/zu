@@ -13,6 +13,14 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.junit.After;
 import org.junit.Before;
 
+import com.twitter.common.zookeeper.ServerSet.UpdateException;
+import com.twitter.common.zookeeper.ZooKeeperClient;
+import com.twitter.common.zookeeper.testing.BaseZooKeeperTest;
+import com.twitter.finagle.Service;
+import com.twitter.finagle.thrift.ThriftClientRequest;
+import com.twitter.util.Future;
+import com.twitter.util.Time;
+
 import scala.runtime.BoxedUnit;
 import zu.core.cluster.ZuCluster;
 import zu.core.cluster.ZuClusterEventListener;
@@ -23,14 +31,6 @@ import zu.finagle.client.ZuFinagleServiceDecorator;
 import zu.finagle.client.ZuTransportClientProxy;
 import zu.finagle.server.ZuFinagleServer;
 import zu.finagle.server.ZuTransportService;
-
-import com.twitter.common.zookeeper.ServerSet.UpdateException;
-import com.twitter.common.zookeeper.ZooKeeperClient;
-import com.twitter.common.zookeeper.testing.BaseZooKeeperTest;
-import com.twitter.finagle.Service;
-import com.twitter.finagle.thrift.ThriftClientRequest;
-import com.twitter.util.Future;
-import com.twitter.util.Time;
 
 public abstract class ZuClusterTestBase extends BaseZooKeeperTest {
 
@@ -109,7 +109,7 @@ public abstract class ZuClusterTestBase extends BaseZooKeeperTest {
   @SuppressWarnings("unchecked")
   public void setup() throws Exception{
     ZooKeeperClient zkClient = createZkClient();
-    cluster = new ZuCluster(zkClient, "/core/test2", true);
+    cluster = new ZuCluster(zkClient, "core", "test2", true);
     
     ClusterType clusterType = getClusterType();
     

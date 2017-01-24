@@ -13,11 +13,15 @@ public interface ZuClusterEventListener {
    * called when the cluster topology changes.
    * @param clusterView the current view of the cluster.
    */
-  public void clusterChanged(Map<Integer, List<InetSocketAddress>> clusterView);
+  default public void clusterChanged(Map<Integer, List<InetSocketAddress>> clusterView){
+    
+  }
   
   /**
    * called for a set of nodes removed from the cluster.
    * @param removedNodes list of nodes removed from the cluster
    */
-  public void nodesRemoved(Set<InetSocketAddress> removedNodes);
+  default public void nodesRemoved(Set<InetSocketAddress> removedNodes) {
+    
+  }
 }

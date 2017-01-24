@@ -132,7 +132,7 @@ public class StandardFinagleClusterTest extends BaseZooKeeperTest{
     ZooKeeperClient zkClient = createZkClient();
     
     // create a new cluster on a given path
-    cluster = new ZuCluster(zkClient, "/core/test3", true);
+    cluster = new ZuCluster(zkClient, "core", "test3", true);
     
     // instantiate a random routing algorithm
     routingAlgorithm = new RoutingAlgorithm.RandomAlgorithm<ReqService.ServiceIface>(clientServiceBuilder);

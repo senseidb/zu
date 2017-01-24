@@ -42,6 +42,7 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
   private final ServerSet serverSet;
   private final List<ZuClusterEventListener> listeners;
   private final String clusterId;
+  private final String prefix;
   private final ZooKeeperClient zkClient;
   private final boolean closeOnShutdown;
   private final Logger logger = Logger.getLogger(ZuCluster.class);
@@ -59,8 +60,8 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
    * @param clusterId name of the cluster
    * @throws MonitorException
    */
-  public ZuCluster(String host, int port, String clusterId) throws MonitorException {
-    this(Arrays.asList(new InetSocketAddress(host,port)), clusterId, DEFAULT_TIMEOUT);
+  public ZuCluster(String host, int port, String prefix, String clusterId) throws MonitorException {
+    this(Arrays.asList(new InetSocketAddress(host,port)), prefix, clusterId, DEFAULT_TIMEOUT);
   }
   
   /**
@@ -70,9 +71,9 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
    * @param timeout zookeeper timeout in seconds
    * @throws MonitorException
    */
-  public ZuCluster(String host, int port, String clusterId,
+  public ZuCluster(String host, int port, String prefix, String clusterId,
       int timeout) throws MonitorException {
-    this(Arrays.asList(new InetSocketAddress(host,port)), clusterId, timeout);
+    this(Arrays.asList(new InetSocketAddress(host,port)), prefix, clusterId, timeout);
   }
   
   /**
@@ -81,9 +82,9 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
    * @param timeout zookeeper timeout in seconds
    * @throws MonitorException
    */
-  public ZuCluster(Iterable<InetSocketAddress> zookeeperAddrs, String clusterId,
+  public ZuCluster(Iterable<InetSocketAddress> zookeeperAddrs, String prefix, String clusterId,
       int timeout) throws MonitorException{
-    this(new ZooKeeperClient(Amount.of(timeout, Time.SECONDS), Credentials.NONE, zookeeperAddrs), clusterId, true);
+    this(new ZooKeeperClient(Amount.of(timeout, Time.SECONDS), Credentials.NONE, zookeeperAddrs), prefix, clusterId, true);
   }
   
   /**
@@ -91,25 +92,26 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
    * @param clusterId name of the cluster
    * @throws MonitorException
    */
-  public ZuCluster(ZooKeeperClient zkClient, String clusterId, boolean closeOnShutdown) throws MonitorException{
+  public ZuCluster(ZooKeeperClient zkClient, String prefix, String clusterId, boolean closeOnShutdown) throws MonitorException{
     assert zkClient != null;
     assert clusterId != null;
     listeners = new LinkedList<ZuClusterEventListener>();
     
-    if (!clusterId.startsWith("/")){
-      clusterId = "/" + clusterId;
+    if (!prefix.startsWith("/")){
+      this.prefix = "/" + prefix;
+    } else {
+      this.prefix = prefix;
     }
     
     this.zkClient = zkClient;
-    this.clusterId = clusterId;
+    this.clusterId = clusterId;    
     this.closeOnShutdown = closeOnShutdown;
-    serverSet = new ServerSetImpl(zkClient, clusterId);
+    serverSet = new ServerSetImpl(zkClient, this.prefix + "/" + clusterId);
     serverSet.monitor(this);
   }
   
-  public List<String> getAvailableClusters(String clusterPrefix) throws Exception {
-    ZooKeeper zk = zkClient.get();
-    return zk.getChildren(clusterPrefix, false);
+  public String getClusterPrefix() {
+    return prefix;
   }
   
   public String getClusterId() {

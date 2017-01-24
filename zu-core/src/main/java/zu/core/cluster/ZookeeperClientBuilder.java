@@ -11,6 +11,7 @@ import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.twitter.common.quantity.Amount;
 import com.twitter.common.quantity.Time;
@@ -49,20 +50,15 @@ public class ZookeeperClientBuilder {
     return new ZooKeeperClient(sessionTimeout, credentials, addrList);
   }
 
-  public static List<String> getAvailableClusters(ZooKeeperClient zkClient, String prefix)
+  public static Set<String> getAvailableClusters(ZooKeeperClient zkClient, String prefix, boolean watch)
       throws Exception {
     try {
       ZooKeeper zk = zkClient.get();    
-      return zk.getChildren(prefix, false);
+      return ImmutableSet.copyOf(zk.getChildren(prefix, watch));
     } catch(Exception e) {
       logger.error(e == null ? "cannot get cluster information" : e.getMessage());
-      return Collections.emptyList();
+      return Collections.emptySet();
     }
-  }
-
-  public static String toString(
-      Map<Integer, List<InetSocketAddress>> clusterView) {
-    return String.valueOf(clusterView);
   }
 
   public static Map<Integer, List<InetSocketAddress>> getClusterView(
@@ -71,8 +67,7 @@ public class ZookeeperClientBuilder {
     ZuCluster cluster = null;
 
     try {
-      cluster = new ZuCluster(zkClient,
-          prefix + "/" + clusterId, false);
+      cluster = new ZuCluster(zkClient, prefix, clusterId, false);
       cluster.addClusterEventListener(new ZuClusterEventListener() {
 
         @Override
