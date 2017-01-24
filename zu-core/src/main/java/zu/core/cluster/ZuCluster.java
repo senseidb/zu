@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.ZooKeeper;
 
@@ -97,16 +98,11 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
     assert clusterId != null;
     listeners = new LinkedList<ZuClusterEventListener>();
     
-    if (!prefix.startsWith("/")){
-      this.prefix = "/" + prefix;
-    } else {
-      this.prefix = prefix;
-    }
-    
-    this.zkClient = zkClient;
-    this.clusterId = clusterId;    
+    this.prefix = "/" + StringUtils.strip(prefix);
+    this.clusterId = StringUtils.strip(clusterId);
+    this.zkClient = zkClient;   
     this.closeOnShutdown = closeOnShutdown;
-    serverSet = new ServerSetImpl(zkClient, this.prefix + "/" + clusterId);
+    serverSet = new ServerSetImpl(zkClient, this.prefix + "/" + this.clusterId);
     serverSet.monitor(this);
   }
   
