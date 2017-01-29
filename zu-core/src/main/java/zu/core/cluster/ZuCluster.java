@@ -249,4 +249,11 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
     }
   }
 
+  public Map<Integer,List<InetSocketAddress>> getClusterView() {
+    NodeClusterView view = clusterView.get();
+    if (view == null) {
+      return Collections.emptyMap();
+    }
+    return view.partMap == null ? Collections.emptyMap() : view.partMap;
+  }
 }
