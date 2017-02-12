@@ -27,11 +27,11 @@ public class ZuClusterManager implements Watcher {
   private final Map<String, ZuCluster> clusterMap = Collections.synchronizedMap(Maps.newHashMap());
   private boolean closeOnShutdown;
   
-  public ZuClusterManager(String clusterUrl, String clusterPrefix) throws Exception {    
+  public ZuClusterManager(String clusterUrl, String clusterPrefix) {    
     this(new ZookeeperClientBuilder().setZookeeperUrl(clusterUrl).build(), clusterPrefix, true);
   }
   
-  public ZuClusterManager(ZooKeeperClient zkClient, String clusterPrefix, boolean closeOnShutdown) throws Exception {
+  public ZuClusterManager(ZooKeeperClient zkClient, String clusterPrefix, boolean closeOnShutdown) {
     this.clusterPrefix = clusterPrefix.startsWith("/") ? clusterPrefix : "/" + clusterPrefix;    
     this.zkClient = zkClient;
     clusters = new AtomicReference<>();    
@@ -54,7 +54,7 @@ public class ZuClusterManager implements Watcher {
     return clusters.get();
   }
   
-  private void watchForClusters() throws Exception {    
+  private void watchForClusters() {    
     Set<String> clusterSet = ZookeeperClientBuilder.getAvailableClusters(zkClient, clusterPrefix, true);
     // remove cluster new longer applicable
     Set<String> tobeRemoved = Sets.newHashSet();
@@ -71,8 +71,12 @@ public class ZuClusterManager implements Watcher {
     
     for (String cluster : clusterSet) {
       if (!clusterMap.containsKey(cluster)) {
-        ZuCluster zuCluster = new ZuCluster(zkClient, clusterPrefix, cluster, false);
-        clusterMap.put(cluster, zuCluster);
+        try {
+          ZuCluster zuCluster = new ZuCluster(zkClient, clusterPrefix, cluster, false);
+          clusterMap.put(cluster, zuCluster);
+        } catch(Exception e) {
+          logger.error("problem creating cluster: " + cluster);
+        }
       }
     }
     

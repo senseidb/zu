@@ -50,8 +50,7 @@ public class ZookeeperClientBuilder {
     return new ZooKeeperClient(sessionTimeout, credentials, addrList);
   }
 
-  public static Set<String> getAvailableClusters(ZooKeeperClient zkClient, String prefix, boolean watch)
-      throws Exception {
+  public static Set<String> getAvailableClusters(ZooKeeperClient zkClient, String prefix, boolean watch){
     try {
       ZooKeeper zk = zkClient.get();    
       return ImmutableSet.copyOf(zk.getChildren(prefix, watch));
