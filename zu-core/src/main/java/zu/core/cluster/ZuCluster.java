@@ -15,7 +15,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.zookeeper.ZooKeeper;
 
 import com.google.common.collect.ImmutableSet;
 import com.twitter.common.net.pool.DynamicHostSet.HostChangeMonitor;
@@ -35,7 +34,7 @@ import com.twitter.thrift.ServiceInstance;
 /**
  * A cluster abstraction.
  */
-public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
+public class ZuCluster implements HostChangeMonitor<ServiceInstance>, Cluster {
   /**
    * Default zookeeper timeout: 5 minutes.
    */
@@ -106,18 +105,11 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
     serverSet.monitor(this);
   }
   
-  public String getClusterPrefix() {
-    return prefix;
-  }
-  
-  public String getClusterId() {
-    return clusterId;
-  }
-  
   /**
    * Adds a listener for cluster events
    * @param lsnr cluster listener
    */
+  @Override
   public void addClusterEventListener(ZuClusterEventListener lsnr){
     synchronized(listeners) {
       listeners.add(lsnr);
@@ -130,11 +122,11 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
    * @param addr node address
    * @param shards list of paritions ids this node supports
    * @return a list of handles, one for each partition
-   * @throws JoinException
-   * @throws InterruptedException
+   * @throws Exception
    */
-  public List<EndpointStatus> join(InetSocketAddress addr, Set<Integer> shards) throws JoinException, InterruptedException {
-    ArrayList<EndpointStatus> statuses = new ArrayList<EndpointStatus>(shards.size());
+  @Override
+  public ClusterRef join(InetSocketAddress addr, Set<Integer> shards) throws Exception {
+    final ArrayList<EndpointStatus> statuses = new ArrayList<EndpointStatus>(shards.size());
     for (Integer shard : shards){
       try{
         statuses.add(serverSet.join(addr, Collections.<String, InetSocketAddress>emptyMap(), shard));
@@ -143,7 +135,7 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
         
         // remove dirty state
         try{
-          leave(statuses);
+          doLeave(statuses);
         }
         catch(UpdateException ue){
           // ignore
@@ -153,7 +145,7 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
       catch(InterruptedException ie){
      // remove dirty state
         try{
-          leave(statuses);
+          doLeave(statuses);
         }
         catch(UpdateException ue){
           // ignore
@@ -161,7 +153,13 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
         throw ie;
       }
     }
-    return statuses;
+    return new ClusterRef() {
+
+      @Override
+      public void leave() throws Exception {
+        doLeave(statuses);
+      }
+    };
   }
   
   /**
@@ -169,7 +167,7 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
    * @param statuses list of handles from joining the cluster
    * @throws UpdateException
    */
-  public void leave(List<EndpointStatus> statuses) throws UpdateException{
+  private static void doLeave(List<EndpointStatus> statuses) throws UpdateException{
     UpdateException ex = null;
     for (EndpointStatus status : statuses){
       try{
@@ -243,6 +241,7 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
   /**
    * shuts down the cluster and closes connection to zookeeper
    */
+  @Override
   public void shutdown() {    
     if (closeOnShutdown && zkClient != null) {
       zkClient.close();
@@ -255,5 +254,15 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>{
       return Collections.emptyMap();
     }
     return view.partMap == null ? Collections.emptyMap() : view.partMap;
+  }
+
+  @Override
+  public String id() {
+    return clusterId;
+  }
+
+  @Override
+  public String namespace() {
+    return prefix;
   }
 }

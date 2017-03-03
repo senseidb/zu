@@ -2,7 +2,6 @@ package zu.finagle.server;
 
 import java.net.InetSocketAddress;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -11,14 +10,8 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import zu.core.cluster.ZuCluster;
-import zu.finagle.serialize.ZuSerializer;
-import zu.finagle.server.ZuTransportService.RequestHandler;
-
 import com.google.common.base.Stopwatch;
 import com.twitter.common.zookeeper.Group.JoinException;
-import com.twitter.common.zookeeper.ServerSet.EndpointStatus;
-import com.twitter.common.zookeeper.ServerSet.UpdateException;
 import com.twitter.finagle.ServerCodecConfig;
 import com.twitter.finagle.Service;
 import com.twitter.finagle.builder.Server;
@@ -26,6 +19,11 @@ import com.twitter.finagle.builder.ServerBuilder;
 import com.twitter.finagle.thrift.ThriftServerFramedCodec;
 import com.twitter.util.Duration;
 import com.twitter.util.Future;
+
+import zu.core.cluster.ClusterRef;
+import zu.core.cluster.ZuCluster;
+import zu.finagle.serialize.ZuSerializer;
+import zu.finagle.server.ZuTransportService.RequestHandler;
 
 public class ZuFinagleServer{
   static final int DEFAULT_MAX_CONCURRENT_REQUESTS = 100;
@@ -98,24 +96,24 @@ public class ZuFinagleServer{
     shutdown(null);
   }
 
-  private Map<String, List<EndpointStatus>> endpointMap = new HashMap<String, List<EndpointStatus>>();
+  private Map<String, ClusterRef> clusterRefMap = new HashMap<>();
   
-  public synchronized void joinCluster(ZuCluster cluster, Set<Integer> shards) throws JoinException, InterruptedException {
-    String clusterId = cluster.getClusterId();
-    List<EndpointStatus> endpoints = endpointMap.get(clusterId);
-    if (endpoints == null) {
-      endpoints = cluster.join(addr, shards);
-      endpointMap.put(clusterId, endpoints);
+  public synchronized void joinCluster(ZuCluster cluster, Set<Integer> shards) throws Exception {
+    String clusterId = cluster.id();
+    ClusterRef clusterRef = clusterRefMap.get(clusterId);
+    if (clusterRef == null) {
+      clusterRef = cluster.join(addr, shards);
+      clusterRefMap.put(clusterId, clusterRef);
     }
     else {
       throw new JoinException("cluster "+clusterId+" already joined, leave first", null);
     }
   }
   
-  public void leaveCluster(ZuCluster cluster) throws UpdateException{
-    List<EndpointStatus> endpoints = endpointMap.remove(cluster.getClusterId());
-    if (endpoints != null) {
-      cluster.leave(endpoints);
+  public void leaveCluster(ZuCluster cluster) throws Exception{
+    ClusterRef clusterRef = clusterRefMap.remove(cluster.id());
+    if (clusterRef != null) {
+      clusterRef.leave();
     }
   }
   

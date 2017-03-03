@@ -8,8 +8,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,14 +17,14 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.twitter.common.zookeeper.ZooKeeperClient;
 
-public class ZuClusterManager implements Watcher {
+public class ZuClusterManager implements ClusterManager, Watcher {
 
   private static final Logger logger = LoggerFactory.getLogger(ZookeeperClientBuilder.class);
   
   private final ZooKeeperClient zkClient;
   private AtomicReference<Set<String>> clusters;
   private final String clusterPrefix;
-  private final Map<String, ZuCluster> clusterMap = Collections.synchronizedMap(Maps.newHashMap());
+  private final Map<String, Cluster> clusterMap = Collections.synchronizedMap(Maps.newHashMap());
   private boolean closeOnShutdown;
   
   public ZuClusterManager(String clusterUrl, String clusterPrefix) {    
@@ -50,6 +50,7 @@ public class ZuClusterManager implements Watcher {
     this.closeOnShutdown = closeOnShutdown;
   }
   
+  @Override
   public Set<String> getAvailableClusters() {
     return clusters.get();
   }
@@ -65,7 +66,7 @@ public class ZuClusterManager implements Watcher {
     }
     
     for(String c : tobeRemoved) {
-      ZuCluster zuCluster = clusterMap.remove(c);
+      Cluster zuCluster = clusterMap.remove(c);
       zuCluster.shutdown();
     }
     
@@ -84,7 +85,8 @@ public class ZuClusterManager implements Watcher {
     logger.info("updated cluster list: " + clusters.get());
   }
   
-  public ZuCluster getCluster(String clusterName) {
+  @Override
+  public Cluster getCluster(String clusterName) {
     return clusterName != null ? clusterMap.get(clusterName) : null;
   }
   
@@ -97,6 +99,7 @@ public class ZuClusterManager implements Watcher {
     }
   }
   
+  @Override
   public void shutdown() {
     if (zkClient != null) {
       zkClient.unregister(this);
@@ -104,10 +107,5 @@ public class ZuClusterManager implements Watcher {
         zkClient.close();
       }
     }
-  }
-  
-  public static void main(String[] args)  throws Exception {
-    ZuClusterManager clusterManager = new ZuClusterManager("localhost:2181", "/dashbase/cluster");
-    clusterManager.shutdown();
-  }
+  }  
 }

@@ -13,7 +13,6 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.junit.After;
 import org.junit.Before;
 
-import com.twitter.common.zookeeper.ServerSet.UpdateException;
 import com.twitter.common.zookeeper.ZooKeeperClient;
 import com.twitter.common.zookeeper.testing.BaseZooKeeperTest;
 import com.twitter.finagle.Service;
@@ -188,7 +187,7 @@ public abstract class ZuClusterTestBase extends BaseZooKeeperTest {
       s.shutdown();
       try {
         s.leaveCluster(cluster);
-      } catch (UpdateException e) {
+      } catch (Exception e) {
         e.printStackTrace();
       }
     }

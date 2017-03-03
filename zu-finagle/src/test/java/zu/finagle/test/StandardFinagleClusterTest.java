@@ -12,23 +12,11 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import junit.framework.TestCase;
-
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import zu.core.cluster.ZuCluster;
-import zu.core.cluster.ZuClusterEventListener;
-import zu.core.cluster.routing.InetSocketAddressDecorator;
-import zu.core.cluster.routing.RoutingAlgorithm;
-import zu.core.cluster.routing.ZuScatterGatherer;
-import zu.finagle.server.ZuFinagleServer;
-import zu.finagle.test.ReqService.ServiceIface;
-import zu.finagle.test.ZuClusterTestBase.Node;
-
-import com.twitter.common.zookeeper.ServerSet.UpdateException;
 import com.twitter.common.zookeeper.ZooKeeperClient;
 import com.twitter.common.zookeeper.testing.BaseZooKeeperTest;
 import com.twitter.finagle.Service;
@@ -38,6 +26,16 @@ import com.twitter.finagle.thrift.ThriftClientFramedCodecFactory;
 import com.twitter.finagle.thrift.ThriftClientRequest;
 import com.twitter.util.Duration;
 import com.twitter.util.Future;
+
+import junit.framework.TestCase;
+import zu.core.cluster.ZuCluster;
+import zu.core.cluster.ZuClusterEventListener;
+import zu.core.cluster.routing.InetSocketAddressDecorator;
+import zu.core.cluster.routing.RoutingAlgorithm;
+import zu.core.cluster.routing.ZuScatterGatherer;
+import zu.finagle.server.ZuFinagleServer;
+import zu.finagle.test.ReqService.ServiceIface;
+import zu.finagle.test.ZuClusterTestBase.Node;
 
 public class StandardFinagleClusterTest extends BaseZooKeeperTest{
 
@@ -233,7 +231,7 @@ public class StandardFinagleClusterTest extends BaseZooKeeperTest{
     for (ZuFinagleServer s : serverList) {
       try{
         s.leaveCluster(cluster);
-      } catch (UpdateException e) {
+      } catch (Exception e) {
         TestCase.fail(e.getMessage());
       }
       finally{

@@ -14,12 +14,12 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableSet;
-import com.twitter.common.zookeeper.ServerSet.EndpointStatus;
 import com.twitter.common.zookeeper.ZooKeeperClient;
 import com.twitter.common.zookeeper.testing.BaseZooKeeperTest;
 
 import junit.framework.Assert;
 import junit.framework.TestCase;
+import zu.core.cluster.ClusterRef;
 import zu.core.cluster.ZuCluster;
 import zu.core.cluster.ZuClusterEventListener;
 import zu.core.cluster.ZuClusterManager;
@@ -91,11 +91,11 @@ public class ZuTest extends BaseZooKeeperTest{
     });
 
    
-    List<EndpointStatus> e1 = mockCluster.join(s1, CLUSTER_VIEW.get(s1.getPort()));
+    ClusterRef clusterRef = mockCluster.join(s1, CLUSTER_VIEW.get(s1.getPort()));
     
     latch.await();
     
-    mockCluster.leave(e1);
+    clusterRef.leave();
     shutdownLatch.await();
   }
   
@@ -144,15 +144,15 @@ public class ZuTest extends BaseZooKeeperTest{
     });
 
    
-    List<EndpointStatus> e1 = mockCluster.join(s1, CLUSTER_VIEW.get(s1.getPort()));
-    List<EndpointStatus> e2 = mockCluster.join(s2, CLUSTER_VIEW.get(s2.getPort()));
-    List<EndpointStatus> e3 = mockCluster.join(s3, CLUSTER_VIEW.get(s3.getPort()));
+    ClusterRef ref1 = mockCluster.join(s1, CLUSTER_VIEW.get(s1.getPort()));
+    ClusterRef ref2 = mockCluster.join(s2, CLUSTER_VIEW.get(s2.getPort()));
+    ClusterRef ref3 = mockCluster.join(s3, CLUSTER_VIEW.get(s3.getPort()));
     
     latch.await();
     
-    mockCluster.leave(e1);
-    mockCluster.leave(e2);
-    mockCluster.leave(e3);
+    ref1.leave();
+    ref2.leave();
+    ref3.leave();
     
     shutdownLatch.await();
   }
