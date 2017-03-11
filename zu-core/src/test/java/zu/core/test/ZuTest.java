@@ -219,16 +219,20 @@ public class ZuTest extends BaseZooKeeperTest{
     
     Assert.assertTrue(view.isEmpty());
     
+    CountDownLatch numShutdown = new CountDownLatch(1);
+    
     mockCluster.addClusterEventListener(new ZuClusterEventListener() {      
       @Override
       public void clusterChanged(
           Map<Integer, List<InetSocketAddress>> clusterView) {
         if (clusterView.get(0) != null) {
           latch.countDown();
+        } else if (clusterView.get(0) == null && latch.getCount() == 0){
+          numShutdown.countDown();
         }
       }
     });
-    mockCluster.join(new InetSocketAddress(1111), ImmutableSet.of(0));
+    Membership m1 = mockCluster.join(new InetSocketAddress(1111), ImmutableSet.of(0));
     
     latch.await();
     
@@ -254,6 +258,12 @@ public class ZuTest extends BaseZooKeeperTest{
     Assert.assertEquals(2, view.size());
     Assert.assertNotNull(view.get(0));
     Assert.assertNotNull(view.get(1));
+    
+    m1.leave();
+    numShutdown.await();
+    
+    view = mockCluster.getClusterView();
+    Assert.assertEquals(1, view.size());
     
     mockCluster.shutdown();
     
