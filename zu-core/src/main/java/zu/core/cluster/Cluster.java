@@ -10,6 +10,6 @@ public interface Cluster {
   String namespace();
   Map<Integer,List<InetSocketAddress>> getClusterView();
   void addClusterEventListener(ZuClusterEventListener lsnr);
-  ClusterRef join(InetSocketAddress addr, Set<Integer> shards) throws Exception;
+  Membership join(InetSocketAddress addr, Set<Integer> shards) throws Exception;
   void shutdown();
 }

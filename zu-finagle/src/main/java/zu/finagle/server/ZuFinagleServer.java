@@ -20,7 +20,7 @@ import com.twitter.finagle.thrift.ThriftServerFramedCodec;
 import com.twitter.util.Duration;
 import com.twitter.util.Future;
 
-import zu.core.cluster.ClusterRef;
+import zu.core.cluster.Membership;
 import zu.core.cluster.ZuCluster;
 import zu.finagle.serialize.ZuSerializer;
 import zu.finagle.server.ZuTransportService.RequestHandler;
@@ -96,11 +96,11 @@ public class ZuFinagleServer{
     shutdown(null);
   }
 
-  private Map<String, ClusterRef> clusterRefMap = new HashMap<>();
+  private Map<String, Membership> clusterRefMap = new HashMap<>();
   
   public synchronized void joinCluster(ZuCluster cluster, Set<Integer> shards) throws Exception {
     String clusterId = cluster.id();
-    ClusterRef clusterRef = clusterRefMap.get(clusterId);
+    Membership clusterRef = clusterRefMap.get(clusterId);
     if (clusterRef == null) {
       clusterRef = cluster.join(addr, shards);
       clusterRefMap.put(clusterId, clusterRef);
@@ -111,7 +111,7 @@ public class ZuFinagleServer{
   }
   
   public void leaveCluster(ZuCluster cluster) throws Exception{
-    ClusterRef clusterRef = clusterRefMap.remove(cluster.id());
+    Membership clusterRef = clusterRefMap.remove(cluster.id());
     if (clusterRef != null) {
       clusterRef.leave();
     }

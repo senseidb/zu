@@ -19,7 +19,7 @@ import com.twitter.common.zookeeper.testing.BaseZooKeeperTest;
 
 import junit.framework.Assert;
 import junit.framework.TestCase;
-import zu.core.cluster.ClusterRef;
+import zu.core.cluster.Membership;
 import zu.core.cluster.ZuCluster;
 import zu.core.cluster.ZuClusterEventListener;
 import zu.core.cluster.ZuClusterManager;
@@ -91,7 +91,7 @@ public class ZuTest extends BaseZooKeeperTest{
     });
 
    
-    ClusterRef clusterRef = mockCluster.join(s1, CLUSTER_VIEW.get(s1.getPort()));
+    Membership clusterRef = mockCluster.join(s1, CLUSTER_VIEW.get(s1.getPort()));
     
     latch.await();
     
@@ -144,9 +144,9 @@ public class ZuTest extends BaseZooKeeperTest{
     });
 
    
-    ClusterRef ref1 = mockCluster.join(s1, CLUSTER_VIEW.get(s1.getPort()));
-    ClusterRef ref2 = mockCluster.join(s2, CLUSTER_VIEW.get(s2.getPort()));
-    ClusterRef ref3 = mockCluster.join(s3, CLUSTER_VIEW.get(s3.getPort()));
+    Membership ref1 = mockCluster.join(s1, CLUSTER_VIEW.get(s1.getPort()));
+    Membership ref2 = mockCluster.join(s2, CLUSTER_VIEW.get(s2.getPort()));
+    Membership ref3 = mockCluster.join(s3, CLUSTER_VIEW.get(s3.getPort()));
     
     latch.await();
     

@@ -44,7 +44,7 @@ public class MockCluster implements Cluster {
   }
 
   @Override
-  public ClusterRef join(final InetSocketAddress addr, Set<Integer> shards)
+  public Membership join(final InetSocketAddress addr, Set<Integer> shards)
       throws Exception {
     for (Integer shard : shards) {
       List<InetSocketAddress> addrList = clusterMap.get(shard);
@@ -58,7 +58,7 @@ public class MockCluster implements Cluster {
     for (ZuClusterEventListener lsnr : listeners) {
       lsnr.clusterChanged(Collections.unmodifiableMap(clusterMap));
     }
-    return new ClusterRef() {
+    return new Membership() {
       @Override
       public void leave() throws Exception {
         for (List<InetSocketAddress> addrList : clusterMap.values()) {

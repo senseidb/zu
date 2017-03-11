@@ -125,7 +125,7 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>, Cluster {
    * @throws Exception
    */
   @Override
-  public ClusterRef join(InetSocketAddress addr, Set<Integer> shards) throws Exception {
+  public Membership join(InetSocketAddress addr, Set<Integer> shards) throws Exception {
     final ArrayList<EndpointStatus> statuses = new ArrayList<EndpointStatus>(shards.size());
     for (Integer shard : shards){
       try{
@@ -153,7 +153,7 @@ public class ZuCluster implements HostChangeMonitor<ServiceInstance>, Cluster {
         throw ie;
       }
     }
-    return new ClusterRef() {
+    return new Membership() {
 
       @Override
       public void leave() throws Exception {

@@ -1,5 +1,5 @@
 package zu.core.cluster;
 
-public interface ClusterRef {
+public interface Membership {
   void leave() throws Exception;
 }
