@@ -20,27 +20,37 @@ import com.twitter.common.zookeeper.ZooKeeperClient;
 public class ZuClusterManager implements ClusterManager, Watcher {
 
   private static final Logger logger = LoggerFactory.getLogger(ZookeeperClientBuilder.class);
-  
+
   private final ZooKeeperClient zkClient;
   private AtomicReference<Set<String>> clusters;
   private final String clusterPrefix;
   private final Map<String, Cluster> clusterMap = Collections.synchronizedMap(Maps.newHashMap());
   private boolean closeOnShutdown;
-  
-  public ZuClusterManager(String clusterUrl, String clusterPrefix) {    
+
+  public ZuClusterManager(String clusterUrl, String clusterPrefix) {
     this(new ZookeeperClientBuilder().setZookeeperUrl(clusterUrl).build(), clusterPrefix, true);
   }
-  
+
   public ZuClusterManager(ZooKeeperClient zkClient, String clusterPrefix, boolean closeOnShutdown) {
-    this.clusterPrefix = clusterPrefix.startsWith("/") ? clusterPrefix : "/" + clusterPrefix;    
+    this.clusterPrefix = clusterPrefix.startsWith("/") ? clusterPrefix : "/" + clusterPrefix;
     this.zkClient = zkClient;
-    clusters = new AtomicReference<>();    
+    clusters = new AtomicReference<>();
     // if prefix does not exist, create it
     try {
       ZooKeeper zk = zkClient.get();
       if (zk.exists(this.clusterPrefix, false) == null) {
         logger.info(this.clusterPrefix + " does not exist, creating a persistent node");
-        zk.create(this.clusterPrefix, null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        String[] paths = this.clusterPrefix.split("/");
+        StringBuilder buf = new StringBuilder("/");
+        for (String path : paths) {
+          path = path.trim();
+          if (path.length() > 0) {
+            buf.append(path);
+            zk.create(buf.toString(), null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            buf.append("/");
+          }
+        }
+
       }
     } catch(Exception e) {
       logger.error(e == null ? "cannot create prefix path" : e.getMessage());
@@ -49,13 +59,13 @@ public class ZuClusterManager implements ClusterManager, Watcher {
     watchForClusters();
     this.closeOnShutdown = closeOnShutdown;
   }
-  
+
   @Override
   public Set<String> getAvailableClusters() {
     return clusters.get();
   }
-  
-  private void watchForClusters() {    
+
+  private void watchForClusters() {
     Set<String> clusterSet = ZookeeperClientBuilder.getAvailableClusters(zkClient, clusterPrefix, true);
     // remove cluster new longer applicable
     Set<String> tobeRemoved = Sets.newHashSet();
@@ -64,12 +74,12 @@ public class ZuClusterManager implements ClusterManager, Watcher {
         clusterSet.add(cluster);
       }
     }
-    
+
     for(String c : tobeRemoved) {
       Cluster zuCluster = clusterMap.remove(c);
       zuCluster.shutdown();
     }
-    
+
     for (String cluster : clusterSet) {
       if (!clusterMap.containsKey(cluster)) {
         try {
@@ -80,16 +90,16 @@ public class ZuClusterManager implements ClusterManager, Watcher {
         }
       }
     }
-    
+
     clusters.set(clusterSet);
     logger.info("updated cluster list: " + clusters.get());
   }
-  
+
   @Override
   public Cluster getCluster(String clusterName) {
     return clusterName != null ? clusterMap.get(clusterName) : null;
   }
-  
+
   @Override
   public void process(WatchedEvent event) {
     try {
@@ -98,7 +108,7 @@ public class ZuClusterManager implements ClusterManager, Watcher {
       logger.error(e == null ? "problem watching for cluster changes" : e.getMessage());
     }
   }
-  
+
   @Override
   public void shutdown() {
     if (zkClient != null) {
@@ -107,5 +117,5 @@ public class ZuClusterManager implements ClusterManager, Watcher {
         zkClient.close();
       }
     }
-  }  
+  }
 }

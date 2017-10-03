@@ -26,21 +26,23 @@ import zu.core.cluster.ZuClusterManager;
 
 
 public class ZuTest extends BaseZooKeeperTest{
-  
+
   private static final Map<Integer,Set<Integer>> CLUSTER_VIEW;
-  
+
+  private static final String CLUSTER_PREFIX = "test/dashbase";
+
   static{
     CLUSTER_VIEW = new HashMap<Integer,Set<Integer>>();
     CLUSTER_VIEW.put(1, new HashSet<Integer>(Arrays.asList(0,1)));
     CLUSTER_VIEW.put(2, new HashSet<Integer>(Arrays.asList(1,2)));
     CLUSTER_VIEW.put(3, new HashSet<Integer>(Arrays.asList(2,3)));
   }
-  
+
   @BeforeClass
   public static void init() throws Exception{
-    
+
   }
-  
+
   static void validate(Map<Integer,Set<Integer>> expected, Map<Integer,List<InetSocketAddress>> view){
     for (Entry<Integer,List<InetSocketAddress>> entry : view.entrySet()){
       Integer key = entry.getKey();
@@ -55,25 +57,25 @@ public class ZuTest extends BaseZooKeeperTest{
     }
     TestCase.assertTrue(expected.isEmpty());
   }
-  
+
   @Test
   public void testBasic() throws Exception{
     ZooKeeperClient zkClient = createZkClient();
-    ZuCluster mockCluster = new ZuCluster(zkClient, "core", "test1", true);
-    
+    ZuCluster mockCluster = new ZuCluster(zkClient, CLUSTER_PREFIX, "test1", true);
+
     InetSocketAddress s1 = new InetSocketAddress(1);
-    
+
     final Map<Integer,Set<Integer>> answer = new HashMap<Integer,Set<Integer>>();
-    
+
     answer.put(0, new HashSet<Integer>(Arrays.asList(1)));
     answer.put(1, new HashSet<Integer>(Arrays.asList(1)));
-    
+
     final CountDownLatch latch = new CountDownLatch(2);
-    
+
     final CountDownLatch shutdownLatch = new CountDownLatch(1);
-    
+
     mockCluster.addClusterEventListener(new ZuClusterEventListener() {
-      
+
       @Override
       public void clusterChanged(Map<Integer, List<InetSocketAddress>> clusterView) {
         int numPartsJoined = clusterView.size();
@@ -90,39 +92,39 @@ public class ZuTest extends BaseZooKeeperTest{
       }
     });
 
-   
+
     Membership clusterRef = mockCluster.join(s1, CLUSTER_VIEW.get(s1.getPort()));
-    
+
     latch.await();
-    
+
     clusterRef.leave();
     shutdownLatch.await();
   }
-  
+
   @Test
   public void testAllNodesJoined() throws Exception{
-    
+
     ZooKeeperClient zkClient = createZkClient();
-    ZuCluster mockCluster = new ZuCluster(zkClient, "core", "test2", true);
-    
+    ZuCluster mockCluster = new ZuCluster(zkClient, CLUSTER_PREFIX, "test2", true);
+
     InetSocketAddress s1 = new InetSocketAddress(1);
     InetSocketAddress s2 = new InetSocketAddress(2);
     InetSocketAddress s3 = new InetSocketAddress(3);
-    
+
     final Map<Integer,Set<Integer>> answer = new HashMap<Integer,Set<Integer>>();
-    
+
     answer.put(0, new HashSet<Integer>(Arrays.asList(1)));
     answer.put(1, new HashSet<Integer>(Arrays.asList(1,2)));
     answer.put(2, new HashSet<Integer>(Arrays.asList(2,3)));
     answer.put(3, new HashSet<Integer>(Arrays.asList(3)));
-    
+
     final HashSet<Integer> partitions = new HashSet<Integer>();
-    
+
     final HashSet<InetSocketAddress> droppedServers = new HashSet<InetSocketAddress>();
-    
+
     final CountDownLatch latch = new CountDownLatch(4);
     final CountDownLatch shutdownLatch = new CountDownLatch(3);
-    mockCluster.addClusterEventListener(new ZuClusterEventListener() {  
+    mockCluster.addClusterEventListener(new ZuClusterEventListener() {
       @Override
       public void clusterChanged(Map<Integer, List<InetSocketAddress>> clusterView) {
         int numPartsJoined = clusterView.size();
@@ -143,32 +145,31 @@ public class ZuTest extends BaseZooKeeperTest{
       }
     });
 
-   
+
     Membership ref1 = mockCluster.join(s1, CLUSTER_VIEW.get(s1.getPort()));
     Membership ref2 = mockCluster.join(s2, CLUSTER_VIEW.get(s2.getPort()));
     Membership ref3 = mockCluster.join(s3, CLUSTER_VIEW.get(s3.getPort()));
-    
+
     latch.await();
-    
+
     ref1.leave();
     ref2.leave();
     ref3.leave();
-    
+
     shutdownLatch.await();
   }
-  
+
   @Test
   public void testClusterManager() throws Exception {
-    String prefix = "test";
     ZooKeeperClient zkClient = createZkClient();
-    ZuClusterManager clusterManager = new ZuClusterManager(zkClient, prefix, false);
-    
+    ZuClusterManager clusterManager = new ZuClusterManager(zkClient, CLUSTER_PREFIX, false);
+
     Assert.assertEquals(0, clusterManager.getAvailableClusters().size());
-    
+
     // join 1cluster
     final CountDownLatch latch = new CountDownLatch(1);
-    ZuCluster mockCluster1 = new ZuCluster(zkClient, "test", "test1", false);
-    mockCluster1.addClusterEventListener(new ZuClusterEventListener() {      
+    ZuCluster mockCluster1 = new ZuCluster(zkClient, CLUSTER_PREFIX, "test1", false);
+    mockCluster1.addClusterEventListener(new ZuClusterEventListener() {
       @Override
       public void clusterChanged(
           Map<Integer, List<InetSocketAddress>> clusterView) {
@@ -178,15 +179,15 @@ public class ZuTest extends BaseZooKeeperTest{
       }
     });
     mockCluster1.join(new InetSocketAddress(1111), ImmutableSet.of(0));
-    
+
     latch.await();
     Assert.assertEquals(1, clusterManager.getAvailableClusters().size());
     Assert.assertNotNull(clusterManager.getCluster("test1"));
-    
+
     // join second cluster
     final CountDownLatch latch2 = new CountDownLatch(1);
-    ZuCluster mockCluster2 = new ZuCluster(zkClient, "test", "test2", false);    
-    mockCluster2.addClusterEventListener(new ZuClusterEventListener() {      
+    ZuCluster mockCluster2 = new ZuCluster(zkClient, CLUSTER_PREFIX, "test2", false);
+    mockCluster2.addClusterEventListener(new ZuClusterEventListener() {
       @Override
       public void clusterChanged(
           Map<Integer, List<InetSocketAddress>> clusterView) {
@@ -199,29 +200,29 @@ public class ZuTest extends BaseZooKeeperTest{
     latch2.await();
     Assert.assertEquals(2, clusterManager.getAvailableClusters().size());
     Assert.assertNotNull(clusterManager.getCluster("test2"));
-    
+
     mockCluster1.shutdown();
     mockCluster2.shutdown();
-    
+
     clusterManager.shutdown();
     zkClient.close();
   }
-  
+
   @Test
   public void testClusterView() throws Exception {
     ZooKeeperClient zkClient = createZkClient();
-    
+
     // join 1cluster
     final CountDownLatch latch = new CountDownLatch(1);
-    ZuCluster mockCluster = new ZuCluster(zkClient, "test", "test", false);
-    
+    ZuCluster mockCluster = new ZuCluster(zkClient, CLUSTER_PREFIX, "test", false);
+
     Map<Integer,List<InetSocketAddress>> view = mockCluster.getClusterView();
-    
+
     Assert.assertTrue(view.isEmpty());
-    
+
     CountDownLatch numShutdown = new CountDownLatch(1);
-    
-    mockCluster.addClusterEventListener(new ZuClusterEventListener() {      
+
+    mockCluster.addClusterEventListener(new ZuClusterEventListener() {
       @Override
       public void clusterChanged(
           Map<Integer, List<InetSocketAddress>> clusterView) {
@@ -233,16 +234,16 @@ public class ZuTest extends BaseZooKeeperTest{
       }
     });
     Membership m1 = mockCluster.join(new InetSocketAddress(1111), ImmutableSet.of(0));
-    
+
     latch.await();
-    
+
     view = mockCluster.getClusterView();
     Assert.assertEquals(1, view.size());
     Assert.assertNotNull(view.get(0));
-    
+
     // join second cluster
-    final CountDownLatch latch2 = new CountDownLatch(1);    
-    mockCluster.addClusterEventListener(new ZuClusterEventListener() {      
+    final CountDownLatch latch2 = new CountDownLatch(1);
+    mockCluster.addClusterEventListener(new ZuClusterEventListener() {
       @Override
       public void clusterChanged(
           Map<Integer, List<InetSocketAddress>> clusterView) {
@@ -253,20 +254,20 @@ public class ZuTest extends BaseZooKeeperTest{
     });
     mockCluster.join(new InetSocketAddress(1111), ImmutableSet.of(1));
     latch2.await();
-    
+
     view = mockCluster.getClusterView();
     Assert.assertEquals(2, view.size());
     Assert.assertNotNull(view.get(0));
     Assert.assertNotNull(view.get(1));
-    
+
     m1.leave();
     numShutdown.await();
-    
+
     view = mockCluster.getClusterView();
     Assert.assertEquals(1, view.size());
-    
+
     mockCluster.shutdown();
-    
+
     zkClient.close();
   }
 }
