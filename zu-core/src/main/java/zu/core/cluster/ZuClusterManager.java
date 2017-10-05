@@ -1,5 +1,6 @@
 package zu.core.cluster;
 
+import java.net.URI;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -27,8 +28,21 @@ public class ZuClusterManager implements ClusterManager, Watcher {
   private final Map<String, Cluster> clusterMap = Collections.synchronizedMap(Maps.newHashMap());
   private boolean closeOnShutdown;
 
-  public ZuClusterManager(String clusterUrl, String clusterPrefix) {
-    this(new ZookeeperClientBuilder().setZookeeperUrl(clusterUrl).build(), clusterPrefix, true);
+  private static String getHostPort(String clusterUrl) {
+    URI uri = URI.create(clusterUrl);
+    int port = uri.getPort();
+    return port == -1 ? uri.getHost() : uri.getHost() + ":" + port;
+  }
+
+  /**
+   * @param clusterUrl a URL in the form of zk://host:port/path/to/cluster
+   */
+  public ZuClusterManager(String clusterUrl) {
+    this(getHostPort(clusterUrl), URI.create(clusterUrl).getPath());
+  }
+
+  public ZuClusterManager(String zkHostPort, String clusterPrefix) {
+    this(new ZookeeperClientBuilder().setZookeeperUrl(zkHostPort).build(), clusterPrefix, true);
   }
 
   public ZuClusterManager(ZooKeeperClient zkClient, String clusterPrefix, boolean closeOnShutdown) {
@@ -58,6 +72,11 @@ public class ZuClusterManager implements ClusterManager, Watcher {
     zkClient.register(this);
     watchForClusters();
     this.closeOnShutdown = closeOnShutdown;
+  }
+
+  @Override
+  public String getClusterPrefix() {
+    return clusterPrefix;
   }
 
   @Override
